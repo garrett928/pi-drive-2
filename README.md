@@ -2,7 +2,7 @@
 
 Car metric collecting, logging, and display application for Android and Android Auto.
 
-Pi Drive is a lightweight, modular Android application that connects to an **OBDLink LX** Bluetooth OBD-II adapter, reads live vehicle data (speed, GPS location, engine/coolant temperature, oil pressure, fuel economy), and displays it on both a phone and an Android Auto head unit. The Android Auto interface supports **half-screen (split-screen) mode** so Google Maps can run alongside the app. Pi Drive can also POST collected metrics to a configurable remote server for centralized data collection.
+Pi Drive is a lightweight, modular Android application that connects to an **OBDLink LX** Bluetooth OBD-II adapter, reads live vehicle data (speed, GPS location, engine/coolant temperature, oil pressure, fuel economy), and displays it on both a phone and an Android Auto head unit. The app detects **hard acceleration and hard braking** events using sensor fusion (OBD speed, GPS, and phone accelerometer) with configurable thresholds, alerting the driver in real time. The Android Auto interface supports **half-screen (split-screen) mode** so Google Maps can run alongside the app. Pi Drive can also POST collected metrics to a configurable remote server for centralized data collection.
 
 ## Table of Contents
 
@@ -13,6 +13,7 @@ Pi Drive is a lightweight, modular Android application that connects to an **OBD
 - [OBD-II Protocol Primer](#obd-ii-protocol-primer)
 - [ELM327 / STN Command Set](#elm327--stn-command-set)
 - [Target PIDs](#target-pids)
+- [Acceleration and Braking Detection](#acceleration-and-braking-detection)
 - [Android Auto Integration](#android-auto-integration)
 - [Server Telemetry Upload](#server-telemetry-upload)
 - [Project Setup](#project-setup)
@@ -28,19 +29,22 @@ Pi Drive is a lightweight, modular Android application that connects to an **OBD
 |   Android Phone   | <-------------------------> |  OBDLink LX    | <------------------> | Car   |
 |   (Pi Drive App)  |      RFCOMM serial stream   |  (STN1155)     |    CAN / ISO / J1850 | ECU   |
 +-------------------+                             +----------------+                      +-------+
-        |
-        |  Android for Cars App Library
-        v
+  |   |   |
+  |   |   +-- Phone sensors (accelerometer, GPS)
+  |   |       -> acceleration/braking detection via sensor fusion
+  |   |
+  |   |  Android for Cars App Library
+  |   v
+  |  +-------------------+
+  |  | Android Auto HU   |   (half-screen alongside Google Maps)
+  |  | (GridTemplate /   |   (alerts via CarToast on hard brake / hard accel)
+  |  |  MapWithContent)  |
+  |  +-------------------+
+  |
+  |  HTTP POST (JSON)
+  v
 +-------------------+
-| Android Auto HU   |   (half-screen alongside Google Maps)
-| (GridTemplate /   |
-|  MapWithContent)  |
-+-------------------+
-        |
-        |  HTTP POST (JSON)
-        v
-+-------------------+
-|  Remote Server    |   (configurable URL, metrics ingestion)
+|  Remote Server    |   (configurable URL, metrics + driving events)
 +-------------------+
 ```
 
@@ -291,6 +295,258 @@ GPS is read from the Android phone's location services, **not** from OBD-II. Use
 
 ---
 
+## Acceleration and Braking Detection
+
+Pi Drive provides **two independent detection strategies** that run in parallel. Both can be enabled simultaneously, and each logs its own event stream.
+
+| Strategy | What it measures | Threshold unit | Best for |
+|---|---|---|---|
+| **Acceleration** | Rate of speed change over time | **mph/s** (or km/h per s) | Simple, intuitive "how fast am I speeding up or slowing down" |
+| **G-Force** | Physical force on the vehicle/occupants | **g** (multiples of 9.81 m/s^2) | Precise force measurement, industry-standard fleet telematics |
+
+Both strategies detect acceleration (speeding up) and deceleration/braking (slowing down). The user can enable either or both, configure thresholds independently, and view separate logs for each.
+
+---
+
+### Strategy 1: Acceleration (mph/s)
+
+The **Acceleration** strategy measures how quickly the vehicle's speed is changing, expressed as **mph per second**. This is the most intuitive metric -- "the car gained 9 mph in one second" is easy for any driver to understand.
+
+#### Data sources
+
+Speed change is derived from two sources, preferring OBD when available:
+
+| Source | How it works | Update rate |
+|---|---|---|
+| **OBD-II speed (PID `0D`)** | True wheel speed from the ECU, polled via the adapter | ~2-5 Hz |
+| **GPS speed** (`Location.getSpeed()`) | Ground speed from `FusedLocationProviderClient` | ~1-10 Hz |
+
+The app uses OBD speed as the primary source. If OBD data is stale (no update in > 500 ms), fall back to GPS speed. GPS readings with poor accuracy (`Location.getSpeedAccuracyMetersPerSecond() > 2.0`) are discarded.
+
+#### Calculation
+
+```
+speed_delta_mph = (speed_now_mph - speed_prev_mph)
+delta_time_s    = (timestamp_now - timestamp_prev) / 1000.0
+rate_mph_s      = speed_delta_mph / delta_time_s
+
+if rate_mph_s > accel_threshold:   -> HARD_ACCEL event
+if rate_mph_s < -brake_threshold:  -> HARD_BRAKE event
+```
+
+Conversion helpers:
+```
+OBD PID 0D returns km/h  ->  mph = kmh * 0.621371
+GPS returns m/s           ->  mph = mps * 2.23694
+```
+
+#### Default thresholds
+
+| Event | Default | Description |
+|---|---|---|
+| **Hard acceleration** | **9 mph/s** | Gaining 9 mph in one second (~0-60 in 6.7s pace) |
+| **Hard braking** | **9 mph/s** | Losing 9 mph in one second |
+
+The threshold is a single number -- the sign is inferred from direction. User configures one value for acceleration and one for braking (they can differ). Expose as a numeric input in mph/s in app settings.
+
+#### Algorithm (pseudocode)
+
+```
+every OBD poll cycle (~250ms):
+    speed_mph = obd_speed_kmh * 0.621371
+        (or fallback: gps_speed_mps * 2.23694)
+
+    rate = (speed_mph - prev_speed_mph) / dt_seconds
+
+    if |rate| > threshold AND duration > min_duration (0.5s):
+        log AccelerationEvent
+        if rate > 0: alert "Hard acceleration: {rate} mph/s"
+        else:        alert "Hard braking: {|rate|} mph/s"
+
+    prev_speed_mph = speed_mph
+```
+
+---
+
+### Strategy 2: G-Force
+
+The **G-Force** strategy measures the actual physical force acting on the vehicle using sensor fusion across three data sources. This is the industry-standard approach used by fleet telematics providers and insurance dongles.
+
+#### Data sources
+
+| Source | What it provides | Strengths | Weaknesses |
+|---|---|---|---|
+| **OBD-II speed (PID `0D`)** | Vehicle speed in km/h, polled ~2-5 Hz | True wheel speed, immune to phone orientation | Low sample rate, 1 km/h resolution |
+| **GPS speed** (`Location.getSpeed()`) | Ground speed in m/s from `FusedLocationProviderClient` | No phone-orientation dependency, ~1-10 Hz | Noisy in tunnels/urban canyons, 1-2s lag |
+| **Phone accelerometer** (`TYPE_LINEAR_ACCELERATION`) | Longitudinal acceleration in m/s^2, up to 100+ Hz | Highest sample rate, instant response | Requires calibration, phone orientation mapping, noisy |
+
+#### Sensor fusion
+
+Use all three sources in a priority waterfall:
+
+1. **Primary: OBD speed delta.** Calculate acceleration from successive OBD speed readings:
+   ```
+   acceleration (m/s^2) = (speed_current - speed_previous) / delta_time
+   ```
+   Where speed is converted from km/h to m/s (`* 0.2778`). At a typical 4 Hz OBD poll rate, this gives 250 ms resolution.
+
+2. **Secondary: GPS speed delta.** Same formula applied to `Location.getSpeed()` values. Use `Location.getSpeedAccuracyMetersPerSecond()` (API 26+) to discard low-confidence readings.
+
+3. **Tertiary: Phone accelerometer.** The `TYPE_LINEAR_ACCELERATION` sensor provides gravity-free acceleration at high sample rates. The longitudinal axis depends on phone mounting orientation, so a calibration step is required (see below).
+
+**Cross-validation:** Only trigger an event when **at least two sources agree** within a tolerance window. This eliminates:
+- Phone drops misread as hard braking (accelerometer spikes but speed unchanged)
+- GPS jumps in tunnels (GPS spikes but OBD speed steady)
+- OBD polling gaps (accelerometer fills in between OBD samples)
+
+#### Accelerometer setup
+
+The phone's `TYPE_LINEAR_ACCELERATION` sensor returns acceleration on three device axes (x, y, z) in m/s^2, with gravity already removed. The challenge is mapping device axes to vehicle axes.
+
+```kotlin
+val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+
+sensorManager.registerListener(
+    listener,
+    accelSensor,
+    SensorManager.SENSOR_DELAY_GAME  // ~50 Hz, good for driving detection
+)
+```
+
+```kotlin
+override fun onSensorChanged(event: SensorEvent) {
+    // event.values[0] = x-axis (lateral in landscape mount)
+    // event.values[1] = y-axis (longitudinal in landscape mount)
+    // event.values[2] = z-axis (vertical)
+    // Axis mapping depends on phone mount orientation -- calibrate on startup
+    val longitudinalAccel = event.values[calibratedLongitudinalAxis]
+}
+```
+
+**Calibration approach:**
+1. On first launch, prompt the user to mount the phone and drive straight briefly
+2. During calibration, identify which axis shows the largest variance during a known acceleration -- that's the longitudinal axis
+3. Store the axis mapping and sign (positive = forward) in `SharedPreferences`
+4. Apply a low-pass filter (alpha ~0.8) to smooth noise before threshold comparison
+
+#### Default thresholds
+
+Industry-standard thresholds used by fleet telematics providers:
+
+| Event | Threshold (g) | Threshold (m/s^2) | Description |
+|---|---|---|---|
+| **Hard acceleration** | **0.22g** | 2.16 m/s^2 | ~5 mph/s, ~8 km/h per sec |
+| **Hard braking** | **0.265g** | 2.60 m/s^2 | ~6 mph/s, ~9.6 km/h per sec |
+| **Severe braking** | **0.50g** | 4.9 m/s^2 | Predictive of crash risk per research data |
+
+User configures thresholds in **g** (the app converts internally: `m/s^2 = g * 9.81`).
+
+#### Algorithm (pseudocode)
+
+```
+every OBD poll cycle (~250ms):
+    obd_accel = (obd_speed_now - obd_speed_prev) / dt       # m/s^2
+
+    gps_accel = (gps_speed_now - gps_speed_prev) / dt        # m/s^2
+        (discard if speed_accuracy > 2.0 m/s)
+
+    phone_accel = low_pass_filter(longitudinal_accelerometer) # m/s^2
+
+    g_force = max(|obd_accel|, |gps_accel|, |phone_accel|) / 9.81
+
+    # Cross-validate: at least 2 of 3 sources agree
+    sources_agreeing = count of sources where |accel| / 9.81 > threshold_g
+    if sources_agreeing >= 2 AND duration > min_duration (0.5s):
+        log GForceEvent
+        if accel < 0: alert "Hard braking: {g_force}g"
+        else:         alert "Hard acceleration: {g_force}g"
+```
+
+A sustained duration filter (default **0.5 - 1.0 seconds**) prevents transient bumps from triggering false events.
+
+---
+
+### How the two strategies relate
+
+The two strategies measure the same physical phenomenon differently and can fire independently:
+
+```
+ mph/s and g are convertible:
+    g = (mph_per_sec * 0.44704) / 9.81
+    mph/s = g * 21.937
+
+ Example: 9 mph/s = 0.41g    |    0.265g = 5.8 mph/s
+```
+
+But they are **intentionally separate** because:
+- **Acceleration** uses speed deltas only (OBD + GPS) -- no phone sensor calibration needed, works immediately
+- **G-Force** adds the phone accelerometer for higher fidelity and cross-validation, but requires calibration
+
+A single braking event may trigger both an Acceleration event and a G-Force event. The app logs them independently so the user can review each log on its own terms.
+
+---
+
+### Event model
+
+```kotlin
+enum class DetectionStrategy { ACCELERATION, G_FORCE }
+enum class EventType { HARD_ACCEL, HARD_BRAKE }
+
+data class DrivingEvent(
+    val strategy: DetectionStrategy,
+    val type: EventType,
+    val timestamp: Instant,
+    val durationMs: Long,
+    val rateMphS: Float?,           // speed change rate (Acceleration strategy)
+    val peakG: Float?,              // peak g-force (G-Force strategy)
+    val peakAccelMps2: Float,       // peak acceleration in m/s^2 (both strategies)
+    val startSpeedMph: Float,
+    val endSpeedMph: Float,
+    val location: LatLng?,
+    val sources: Set<DataSource>    // OBD, GPS, ACCELEROMETER
+)
+```
+
+Events should be:
+- Displayed as a toast/alert on the phone and Android Auto (use `CarToast` for Auto)
+- Logged to the local database with the `strategy` field for filtering
+- Included in server telemetry uploads (see [Server Telemetry Upload](#server-telemetry-upload))
+
+### User settings
+
+| Setting | Type | Default | Notes |
+|---|---|---|---|
+| Acceleration detection enabled | toggle | on | |
+| Acceleration hard accel threshold | mph/s | 9 | |
+| Acceleration hard brake threshold | mph/s | 9 | |
+| G-Force detection enabled | toggle | off | Requires accelerometer calibration |
+| G-Force hard accel threshold | g | 0.22 | |
+| G-Force hard brake threshold | g | 0.265 | |
+| G-Force severe brake threshold | g | 0.50 | Optional second-tier alert |
+| Minimum event duration | seconds | 0.5 | Shared by both strategies |
+| Alert sound | toggle | on | Audible alert on event |
+| Speed unit preference | mph / km/h | mph | Affects display and Acceleration threshold unit |
+
+### Additional permissions for accelerometer
+
+No additional permissions are needed -- motion sensors do not require runtime permissions on Android. However, the `HIGH_SAMPLING_RATE_SENSORS` permission is needed if you want sensor data faster than 200 Hz (not necessary for driving detection):
+
+```xml
+<!-- Only needed if sampling above 200 Hz -->
+<uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+```
+
+### References
+
+- [Android motion sensors (TYPE_LINEAR_ACCELERATION)](https://developer.android.com/develop/sensors-and-location/sensors/sensors_motion)
+- [FusedLocationProviderClient](https://developers.google.com/android/reference/com/google/android/gms/location/FusedLocationProviderClient)
+- [Location.getSpeed()](https://developer.android.com/reference/android/location/Location#getSpeed())
+- [Smartphone-based hard-braking detection at scale (research paper)](https://arxiv.org/pdf/2202.01934)
+- [Damoov: How smartphones detect driving](https://damoov.com/how-your-smartphone-understands-driving/)
+
+---
+
 ## Android Auto Integration
 
 Pi Drive uses the **Android for Cars App Library** (`androidx.car.app`) to project a dashboard UI onto the car's head unit.
@@ -423,7 +679,32 @@ The server URL is stored in `SharedPreferences` and configurable from the mobile
   "calculated": {
     "fuel_economy_mpg": 28.5,
     "fuel_economy_kml": 12.1
-  }
+  },
+  "accel_mps2": 0.45,
+  "events": [
+    {
+      "strategy": "ACCELERATION",
+      "type": "HARD_BRAKE",
+      "timestamp": "2026-05-24T22:15:28.800Z",
+      "duration_ms": 1200,
+      "rate_mph_s": -11.2,
+      "peak_accel_mps2": -5.0,
+      "start_speed_mph": 59,
+      "end_speed_mph": 38,
+      "sources": ["OBD", "GPS"]
+    },
+    {
+      "strategy": "G_FORCE",
+      "type": "HARD_BRAKE",
+      "timestamp": "2026-05-24T22:15:28.800Z",
+      "duration_ms": 1200,
+      "peak_g": 0.51,
+      "peak_accel_mps2": -5.0,
+      "start_speed_mph": 59,
+      "end_speed_mph": 38,
+      "sources": ["OBD", "GPS", "ACCELEROMETER"]
+    }
+  ]
 }
 ```
 
