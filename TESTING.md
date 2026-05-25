@@ -723,6 +723,266 @@ A checklist of scenarios to validate across all three phases. Mark which phases 
 
 ---
 
+## AI Agent Testing Workflow
+
+This section is specifically for AI coding agents (Claude Code and similar tools) that need to implement a feature and verify it autonomously without a human watching the screen.
+
+### What the agent does NOT need
+
+- Android Studio open
+- A physical phone
+- A physical dongle
+- Eyes on a screen
+
+Everything is driven through the shell via `adb`, `./gradlew`, and optionally the ELM327 emulator. Screenshots can be taken and read as images for visual verification.
+
+### Environment check
+
+Before starting any work, verify the environment is ready:
+
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb
+EMULATOR=~/Library/Android/sdk/emulator/emulator
+
+# Check tools exist
+ls $ADB && echo "adb OK" || echo "ERROR: adb not found"
+ls $EMULATOR && echo "emulator OK" || echo "ERROR: emulator not found"
+
+# Check for running devices
+$ADB devices
+# Should show either an emulator or physical device with "device" status.
+# "emulator-5554  device" means the AVD is running.
+# "XXXXXX  device" means a physical phone is connected.
+# Empty (just the header) means nothing is connected — start the emulator first.
+```
+
+### Starting the Android emulator headlessly
+
+The machine has one AVD already configured: `Medium_Phone_API_36.0`
+
+```bash
+EMULATOR=~/Library/Android/sdk/emulator/emulator
+ADB=~/Library/Android/sdk/platform-tools/adb
+
+# Start headlessly (no window, no audio, faster)
+$EMULATOR -avd Medium_Phone_API_36.0 -no-window -no-audio -no-boot-anim &
+EMULATOR_PID=$!
+
+# Wait for boot (~45 seconds from cold start)
+$ADB wait-for-device
+until [ "$($ADB shell getprop sys.boot_completed 2>/dev/null)" = "1" ]; do
+  sleep 3
+done
+echo "Emulator ready"
+```
+
+If the emulator is already running (e.g., started by Android Studio), `$ADB devices` shows `emulator-5554  device` and you can skip the start step.
+
+### Screenshot and recording requirements
+
+**Screenshots are mandatory proof.** Every test session must produce at least one screenshot showing the feature in its expected state. A feature is not verified until a screenshot confirms it is visually correct on the device.
+
+- Take a screenshot **after every significant state**: launch, navigation, interaction, alert fire, trip start/stop.
+- Name screenshots descriptively: `/tmp/pidrive_<feature>_<state>.png`
+- Read each screenshot with the `Read` tool and describe what you see — do not assume correctness without looking.
+- Keep screenshots until the feature is confirmed correct; they are the audit trail.
+
+**Screen recordings** are recommended (not required) for multi-step interaction flows where a static screenshot loses context. Use `adb shell screenrecord` (3 min max):
+
+```bash
+# Start recording in background
+ADB=~/Library/Android/sdk/platform-tools/adb
+$ADB shell screenrecord /sdcard/recording.mp4 &
+
+# ... perform interactions ...
+
+# Stop and pull
+$ADB shell pkill -l SIGINT screenrecord
+sleep 2
+$ADB pull /sdcard/recording.mp4 /tmp/pidrive_recording.mp4
+```
+
+Good candidates for screen recording: the connect flow (scan→pair→done), trip start/stop transitions, alert firing with animation, split-screen AA layout.
+
+---
+
+### The agent verify loop
+
+For any feature implementation, follow this sequence:
+
+**Step 1 — Build**
+```bash
+cd /Users/ghart/Documents/garrett-files/projects/pi-drive-2/pi-drive-android
+./gradlew :mobile:assembleDebug 2>&1 | tail -20
+# Must end with: BUILD SUCCESSFUL
+```
+
+If `BUILD FAILED`: read the error output, fix compilation errors, repeat.
+
+**Step 2 — Run unit tests**
+```bash
+./gradlew :shared:test :mobile:test 2>&1 | tail -30
+# Must end with: BUILD SUCCESSFUL
+# Any test failure prints: > Test X FAILED
+```
+
+Unit tests run in the JVM — no device needed. Fix failures before proceeding.
+
+**Step 3 — Install on device**
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb
+./gradlew :mobile:installDebug
+# Or: $ADB install mobile/build/outputs/apk/debug/mobile-debug.apk
+```
+
+**Step 4 — Launch in demo mode and activate the scenario**
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb
+
+# Clear old logs first
+$ADB logcat -c
+
+# Launch with the relevant scenario for the feature being tested
+$ADB shell am start -n ghart.space.pi_drive/.MainActivity \
+    --ez demo_mode true \
+    --es demo_scenario "CRUISE"
+```
+
+**Step 5 — Wait for app to start, then capture a screenshot**
+```bash
+sleep 4   # give the app time to render
+
+ADB=~/Library/Android/sdk/platform-tools/adb
+$ADB shell screencap -p /sdcard/screen.png
+$ADB pull /sdcard/screen.png /tmp/pidrive-screen.png
+```
+
+Then use the `Read` tool to open `/tmp/pidrive-screen.png` and inspect the UI visually. Verify:
+- The expected screen is showing
+- Values are rendering (not blank or crashed)
+- Layout matches the design spec in `ui-handoff/pi-drive/project/`
+
+**Step 6 — Read logcat for confirmation**
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb
+
+# Dump the last 5 seconds of logs for the app
+$ADB logcat -d -s PiDrive:V OBDTransport:V VehicleData:V TripAccumulator:V AccelDetector:V GForceDetector:V TelemetryUploader:V AndroidRuntime:E \
+  | tail -50
+```
+
+Look for:
+- `Demo mode active` — confirms demo started
+- `FATAL EXCEPTION` — means the app crashed; read the full stack trace
+- Feature-specific log output from the new code
+
+**Step 7 — Navigate to the feature's screen (if needed)**
+
+Use the UI hierarchy dump to find element positions, then tap:
+
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb
+
+# Dump the UI tree to find tappable elements
+$ADB shell uiautomator dump /sdcard/ui.xml && $ADB pull /sdcard/ui.xml /tmp/ui.xml
+
+# Read /tmp/ui.xml with the Read tool to find bounds of the element you need
+# Then tap it:
+$ADB shell input tap <x> <y>
+
+# Screenshot after navigating
+$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-screen2.png
+```
+
+**Step 8 — Run instrumented tests (if they exist for this feature)**
+```bash
+cd /Users/ghart/Documents/garrett-files/projects/pi-drive-2/pi-drive-android
+./gradlew :mobile:connectedDebugAndroidTest 2>&1 | tail -40
+```
+
+Results in: `mobile/build/outputs/androidTest-results/connected/`
+
+### Using the ELM327 emulator instead of demo mode
+
+When the feature touches OBD parsing, PID handling, or the initialization sequence, use Phase 2 (TCP) instead of demo mode:
+
+```bash
+# Terminal 1: start emulator
+python3 -m elm -n 35000 -s car &
+sleep 2  # wait for it to bind
+
+# Forward port to device
+~/Library/Android/sdk/platform-tools/adb reverse tcp:35000 tcp:35000
+
+# Launch app in TCP mode
+~/Library/Android/sdk/platform-tools/adb shell am start \
+    -n ghart.space.pi_drive/.MainActivity \
+    --ez tcp_mode true \
+    --es tcp_host "localhost" \
+    --ei tcp_port 35000
+```
+
+Then set custom PID values to trigger specific feature behavior:
+
+```bash
+# Inject a value that triggers a health alert (coolant > 230°F → 110°C)
+# PID 05: A-40 = temp in C → A = 150 → 0x96
+# echo into the emulator's stdin:
+echo "edit 0105=41 05 96" | python3 -c "
+import socket, sys, time
+s = socket.socket(); s.connect(('localhost', 35000))
+# emulator console is on a separate control port; adjust if needed
+"
+```
+
+Alternatively, use the emulator's interactive console by running it in a foreground terminal and typing commands while the app is running.
+
+### Quick screenshot comparison workflow
+
+When verifying that a UI element looks correct against the design prototype:
+
+```bash
+ADB=~/Library/Android/sdk/platform-tools/adb
+
+# Screenshot
+$ADB shell screencap -p /sdcard/screen.png
+$ADB pull /sdcard/screen.png /tmp/check.png
+```
+
+Then:
+1. Read `/tmp/check.png` with the `Read` tool to see the current state
+2. Read the relevant design file (e.g., `ui-handoff/pi-drive/project/pd-screens-phone.jsx`) to recall the intended design
+3. Compare layout, colors, typography, and spacing
+4. Fix any discrepancies, rebuild, screenshot again
+
+### Interpreting Gradle test output
+
+```
+> Task :shared:testDebugUnitTest
+
+PidParserTest > parse speed response PASSED
+PidParserTest > parse NO DATA response PASSED
+AccelerationDetectorTest > hard brake event fires at threshold FAILED
+    AssertionError: Expected 1 event but got 0
+    at AccelerationDetectorTest.kt:42
+```
+
+Test XML results live at:
+```
+pi-drive-android/shared/build/test-results/testDebugUnitTest/*.xml
+pi-drive-android/mobile/build/test-results/testDebugUnitTest/*.xml
+```
+
+Read individual XML files to get exact failure messages when the Gradle output is truncated.
+
+### Stopping the emulator when done
+
+```bash
+~/Library/Android/sdk/platform-tools/adb emu kill
+```
+
+---
+
 ## Quick Start
 
 The fastest path from zero to testing:
