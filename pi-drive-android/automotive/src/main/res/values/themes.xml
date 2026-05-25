@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.Pidrive" parent="android:Theme.Material.Light.DarkActionBar" />
+</resources>
