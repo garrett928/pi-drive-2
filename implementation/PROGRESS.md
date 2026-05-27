@@ -1,31 +1,39 @@
 # Pi Drive -- Implementation Progress
 
-Last updated: 2026-05-25
+Last updated: 2026-05-26
 
 ## Current State
 
-**Active phase:** Phase 0 -- Bootstrap
-**Active step:** 0.1 -- Build system + Kotlin + Compose
-**Project state:** Bare Android Studio scaffold. No Compose, no Hilt, no Room, no Kotlin plugin in shared module.
+**Active phase:** Phase 2 -- OBD Protocol
+**Active step:** 2.2 -- PID support bitmask + VIN decoder
+**Project state:** OBD command/response layer complete (Step 2.1 done). OBDCommand sealed class (ATZ, ATE0, ATL0, ATS0, ATH0, ATSP, ATRV, PidRequest), OBDResponse sealed class (Success with ByteArray equality, NoData, Error, ATResponse), ResponseParser (handles spaced/unspaced hex, SEARCHING prefix, echo residue, multi-ECU), PidDecoder (10 decode functions), FuelEconomy (MAF-based and fuel-rate-based MPG). 131 unit tests green. Next: PID support bitmask, VIN decoder, InitializationSequence.
 
 ## Completed
 
-(none yet)
+| Step | Title | Summary |
+|---|---|---|
+| 0.1 | Build system + Kotlin + Compose + Hilt + Room | libs.versions.toml (AGP 9.1.1, Kotlin 2.2.21, KSP 2.3.8), all modules converted to Kotlin DSL; no kotlin.android plugin (AGP 9 builtInKotlin); JDK 25 required for jlink |
+| 0.2 | Design system + theme tokens | PiDriveTheme with Material3 dark/light, token colors from pd-tokens.jsx |
+| 0.3 | Navigation + app shell | PiDriveScaffold, NavHost with Live/Connect/Trips placeholder screens |
+| 1.1 | Data models + interfaces | VehicleSnapshot, MetricId, MetricValue, ConnectionState, DrivingEvent, OBDTransport, VehicleDataSource, all unit-tested |
+| 1.2 | MockTransport + DemoVehicleDataSource | MockTransport with canned AT/PID responses; DemoVehicleDataSource with 8 scenarios (CRUISE, CITY, HIGHWAY, HARD_BRAKE, COLD_START, LOW_FUEL, OVERSPEED, DISCONNECT); Hilt DataModule + AppConfig; 30 unit tests green; device: "Demo mode active, scenario: CRUISE" logged |
+| 1.3 | Room database schema | 5 entities (snapshots, driving_events, auto_trips, manual_trips, pending_uploads), 5 DAOs, Converters (Instant/enum/Set<DataSource>), PiDriveDatabase v1, Hilt DatabaseModule; Robolectric added for JVM Room tests; 9 new tests, 79 total green |
 
 ## Step Status
 
 | Step | Title | Status | PR/Commit |
 |---|---|---|---|
 | **Phase 0: Bootstrap** |
-| 0.1 | Build system + Kotlin + Compose + Hilt + Room | NOT STARTED | |
-| 0.2 | Design system + theme tokens | NOT STARTED | |
-| 0.3 | Navigation + app shell | NOT STARTED | |
+| 0.1 | Build system + Kotlin + Compose + Hilt + Room | DONE | |
+| 0.2 | Design system + theme tokens | DONE | |
+| 0.3 | Navigation + app shell | DONE | |
 | **Phase 1: Data Layer** |
-| 1.1 | Data models + interfaces | NOT STARTED | |
-| 1.2 | MockTransport + DemoVehicleDataSource | NOT STARTED | |
-| 1.3 | Room database schema | NOT STARTED | |
+| 1.1 | Data models + interfaces | DONE | |
+| 1.2 | MockTransport + DemoVehicleDataSource | DONE | |
+| 1.3 | Room database schema | DONE | |
+| 2.1 | Command formatting + response parsing | DONE | |
 | **Phase 2: OBD Protocol** |
-| 2.1 | Command formatting + response parsing | NOT STARTED | |
+| 2.1 | Command formatting + response parsing | DONE | |
 | 2.2 | PID support bitmask + VIN decoder | NOT STARTED | |
 | 2.3 | OBD polling loop + OBDVehicleDataSource | NOT STARTED | |
 | **Phase 3: Phone Dashboard** |
@@ -66,6 +74,9 @@ Last updated: 2026-05-25
 
 ## Notes
 
-- The scaffold currently uses View-based layout (activity_main.xml). Step 0.1 replaces this with Compose.
-- shared/build.gradle is Groovy (.gradle not .kts). Step 0.1 may convert it to .kts for consistency.
-- No Kotlin plugin is applied to the shared module. Step 0.1 fixes this.
+### AGP 9.0+ / Kotlin 2.2.x build system
+- Do NOT apply `org.jetbrains.kotlin.android` plugin to `:mobile` or `:automotive`; AGP 9.0+ handles Kotlin via `builtInKotlin=true` by default
+- `kotlinOptions {}` block requires the kotlin.android plugin; use `compileOptions { sourceCompatibility/targetCompatibility }` instead
+- KSP uses new versioning scheme starting ~2.3.x (no longer embeds Kotlin version string). Use `ksp = "2.3.8"`
+- Android 36.1 compileSdk requires `jlink`, which only exists in full JDK installs. Set `org.gradle.java.home=/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home` in gradle.properties
+- Run `./gradlew --stop` after changing gradle.properties to kill cached daemons

@@ -93,8 +93,8 @@
 
 **Verify (demo mode simulates the connect flow):**
 - `/pd-run` -> navigate to connect screen
-- `/pd-screenshot` at scan screen -> device list visible
-- Navigate through pair and done screens -> `/pd-screenshot` each step
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-connect-scan.png` → read image: scan screen device list visible
+- Navigate through pair and done screens; screenshot each step: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-connect-pair.png` and `$ADB shell screencap -p /sdcard/screen3.png && $ADB pull /sdcard/screen3.png /tmp/pidrive-connect-done.png` → read each image
 - "Go to dashboard" returns to live view
 
 **Estimated size:** ~2k lines
@@ -130,7 +130,7 @@
 
 **Verify:**
 - `/pd-run` with DISCONNECT demo scenario -> after ~30s, banner shows "Reconnecting..." -> then reconnects and shows connected
-- `/pd-screenshot` during disconnected state -> banner shows retry UI
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-reconnect-banner.png` → read image: banner shows retry UI during disconnected state
 - `/pd-logs` -> reconnect attempts visible in logcat
 
 **Estimated size:** ~1k lines

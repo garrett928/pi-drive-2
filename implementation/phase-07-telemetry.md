@@ -8,6 +8,40 @@
 
 ---
 
+## Server API Contract
+
+The Android client communicates with three endpoints. All responses are **plain JSON — no HAL/HATEOAS `_links`**. If `apiKey` is configured, every request includes `Authorization: Bearer {apiKey}`.
+
+### `POST {serverUrl}/telemetry`
+
+Upload one telemetry snapshot.
+
+- **Auth:** `Authorization: Bearer {apiKey}` (if set), `X-Device-Id: {deviceId}`
+- **Body:** `TelemetryPayload` JSON (see Step 7.1). `vin` is required.
+- **Server behavior:** Auto-registers the vehicle on the first upload for a new VIN. Idempotent by `(vin, timestamp)` — re-uploading the same snapshot is safe.
+- **Response `200 OK`:** `{ "ok": true }`
+- **Response `400`:** Missing or blank `vin`, malformed body.
+- **Response `401`:** Bad or missing API key (if server has auth enabled).
+
+### `GET {serverUrl}/telemetry/latest?vin={vin}`
+
+Get the server's most recently received timestamp for this vehicle.
+
+- **Auth:** same as above.
+- **Response `200 OK`:** `{ "vin": "1HGCM82633A123456", "latestTimestamp": "2026-05-25T14:30:00Z" }`
+- **Response `404`:** No telemetry exists for this VIN yet.
+- **Use:** Settings screen "last synced" display; future cross-device recovery (e.g., fresh install on a new phone can query this to know the server's sync state).
+
+### `GET {serverUrl}/health`
+
+Liveness / connection test. Used by the "Test" button in the server settings screen.
+
+- **Auth:** same as above.
+- **Response `200 OK`:** `{ "status": "ok" }`
+- **Response `401`:** Bad API key.
+
+---
+
 ## Step 7.1 -- Telemetry Payload + HTTP Uploader
 
 **What to build in `shared/src/main/java/.../shared/telemetry/`:**
@@ -18,7 +52,7 @@
    data class TelemetryPayload(
        val timestamp: String, // ISO 8601
        val deviceId: String,
-       val vin: String?,
+       val vin: String,       // required — sourced from TelemetryConfig, never null
        val location: LocationPayload?,
        val obd: OBDPayload,
        val calculated: CalculatedPayload,
@@ -29,25 +63,33 @@
    Plus nested data classes for `LocationPayload`, `OBDPayload`, `CalculatedPayload`, `EventPayload`.
 
 2. **`PayloadBuilder.kt`**:
-   - `build(snapshot: VehicleSnapshot, events: List<DrivingEvent>, config: TelemetryConfig): TelemetryPayload`
+   - `build(snapshot: VehicleSnapshot, events: List<DrivingEvent>, config: TelemetryConfig): Result<TelemetryPayload>`
+   - Returns `Result.failure` with a descriptive error if `config.vin` is blank — upload is skipped, not queued, until VIN is provided
+   - Sources `vin` from `config.vin` (never from `VehicleSnapshot` — VIN is a static vehicle property, not a live signal)
    - Applies signal selection (only includes enabled signals)
    - Converts units as needed for the wire format
 
 3. **`TelemetryUploader.kt`**:
    - OkHttp-based HTTP client
-   - `upload(payload: TelemetryPayload): Result<Unit>`
-   - POST JSON to configured URL
-   - Headers: `Content-Type: application/json`, `Authorization: Bearer $apiKey` (if configured), `X-Device-Id`
+   - `upload(payload: TelemetryPayload): Result<Unit>` → `POST {serverUrl}/telemetry`
+   - `checkHealth(): Result<Unit>` → `GET {serverUrl}/health` (used by settings Test button)
+   - `getLatestTimestamp(vin: String): Result<String?>` → `GET {serverUrl}/telemetry/latest?vin={vin}` (returns ISO 8601 string or null if 404)
+   - Headers on all requests: `Content-Type: application/json`, `Authorization: Bearer $apiKey` (if configured), `X-Device-Id: {deviceId}`
    - HTTPS validation (reject HTTP URLs)
    - Configurable timeout (10s connect, 30s read)
    - Returns success/failure with error message
 
 4. **`TelemetryConfig.kt`**: Persisted in `EncryptedSharedPreferences`:
    ```kotlin
+   /** How the VIN was obtained. */
+   enum class VinSource { AUTO_OBD, MANUAL, NONE }
+
    data class TelemetryConfig(
        val serverUrl: String = "",
        val apiKey: String = "",
-       val deviceId: String, // generated once on first launch
+       val deviceId: String,          // generated once on first launch
+       val vin: String = "",          // VIN of the vehicle; blank until detected or entered
+       val vinSource: VinSource = VinSource.NONE,
        val streamWhileDriving: Boolean = true,
        val bufferWhenOffline: Boolean = true,
        val uploadOnWifiOnly: Boolean = false,
@@ -56,6 +98,7 @@
        val enabledSignals: Set<String> = ALL_SIGNALS,
    )
    ```
+   **Note:** VIN reading from OBD (service 09 PID 02) is Phase 2's responsibility. Phase 7 owns storing the result and handling the manual-entry fallback. When Phase 2 successfully reads a VIN it should call a `VinRepository` use case (stubbed here, wired in Phase 2) that writes `vin` + `vinSource=AUTO_OBD` into `TelemetryConfig`.
 
 5. **`TelemetryService.kt`**:
    - Foreground service (required for ongoing background work on Android 14+)
@@ -65,9 +108,16 @@
    - Tracks: last successful upload time, queue depth, upload latency
 
 **Unit tests:**
-- `PayloadBuilderTest.kt`: snapshot with known values -> JSON string matches expected format; null fields omitted; signal selection filters correctly
-- `TelemetryUploaderTest.kt`: Mock OkHttp -> verify request URL, headers, body format; verify HTTPS rejection for HTTP URL
-- `TelemetryServiceTest.kt`: Feed 5 snapshots -> 5 upload attempts; upload failure -> queued in Room
+- `PayloadBuilderTest.kt`: snapshot with known values → JSON string matches expected format; null fields omitted; signal selection filters correctly
+- `PayloadBuilderTest.kt` VIN: config with non-blank VIN → `vin` present in payload; config with blank VIN → `Result.failure` returned, no payload built
+- `TelemetryUploaderTest.kt`: Mock OkHttp → verify `POST /telemetry` URL, headers, body format; verify HTTPS rejection for HTTP URL; `GET /health` returns ok; `GET /telemetry/latest?vin=` returns timestamp string
+- `TelemetryServiceTest.kt`: Feed 5 snapshots → 5 upload attempts; upload failure → queued in Room; blank VIN in config → uploads skipped (not queued)
+
+**Verify:**
+- `/pd-run` CRUISE scenario with a valid server URL configured in TelemetryConfig
+- `/pd-logs` -> `TelemetryUploader` tag: "POST /telemetry" requests logged at the configured sample rate
+- Screenshot (dashboard): `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-telemetry-active.png` → read image: dashboard live and streaming data
+- Navigate to Settings > Telemetry Server; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-telemetry-settings.png` → read image: "Last upload" timestamp is recent
 
 **Estimated size:** ~1.5k lines
 
@@ -110,6 +160,7 @@
 - `/pd-run` CRUISE scenario with server URL set to a non-existent host
 - `/pd-logs` -> "Upload failed, queuing for retry" messages
 - Set server URL to a mock endpoint (httpbin or local) -> queued data uploads
+- Screenshot (Settings > Telemetry Server): `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-offline-buffer.png` → read image: health section shows error state while server unreachable, then recovery after pointing to mock endpoint
 
 **Estimated size:** ~1.2k lines
 
@@ -120,6 +171,10 @@
 **What to build in `mobile/src/main/java/.../ui/screens/settings/`:**
 
 1. **`TelemetryServerScreen.kt`** (route: `settings/server`):
+   - **Vehicle section:**
+     - VIN display: if `vinSource == AUTO_OBD` show a read-only chip labelled "Detected from OBD" with the VIN value; if `vinSource == MANUAL` show an editable text field pre-filled with the saved VIN; if `vinSource == NONE` show an editable text field with hint text "Enter VIN manually"
+     - "Re-detect from OBD" button — only enabled when OBD is connected; triggers `TelemetryServerViewModel.retriggerVinDetection()`
+     - If VIN is blank on first entry to this screen, show an inline warning banner: "Uploads paused — VIN required. Connect your OBD adapter or enter the VIN manually."
    - **Endpoint section:**
      - Server URL text input (validated as HTTPS on save)
      - Device ID (read-only, copyable)
@@ -127,8 +182,8 @@
    - **Connection health card:**
      - Status: healthy/unhealthy
      - Round-trip latency (ms)
-     - Time since last sync
-     - "Test" button: sends a test POST, shows result
+     - Time since last sync (sourced from `GET /telemetry/latest?vin={vin}`)
+     - "Test" button: calls `GET {serverUrl}/health`, shows result inline
    - **Streaming toggles:**
      - Stream live while driving (on/off)
      - Buffer when offline (on/off)
@@ -143,15 +198,20 @@
 
 2. **`TelemetryServerViewModel.kt`** (`@HiltViewModel`):
    - Loads/saves `TelemetryConfig`
-   - Test connection: POST to server URL with test payload, measure latency
-   - Exposes: config state, connection health, signal support
+   - Exposes: config state, connection health, signal support, `vinState: StateFlow<VinState>`
+   - `VinState`: data class with `vin: String`, `source: VinSource`, `isBlank: Boolean`
+   - `saveVin(vin: String)`: saves to `TelemetryConfig` with `vinSource = MANUAL`
+   - `retriggerVinDetection()`: calls stubbed `VinRepository.readVinFromObd()` use case — logs a warning in Phase 7 since Phase 2 hasn't wired this yet; full implementation wired in Phase 2
+   - Test connection: `GET {serverUrl}/health` via `TelemetryUploader.checkHealth()`, measures round-trip latency
+   - Fetch last synced time: `GET {serverUrl}/telemetry/latest?vin={vin}` on screen entry
 
 **Unit tests:**
-- ViewModel: save URL -> read back -> matches; invalid HTTP URL -> validation error; test connection with mock server -> latency measured
+- ViewModel: save URL → read back → matches; invalid HTTP URL → validation error; test connection with mock uploader → latency measured
+- ViewModel VIN: blank VIN on load → `vinState.isBlank = true`; `saveVin("1HGCM...")` → `vinSource == MANUAL`, stored in config; `retriggerVinDetection()` when disconnected → no-op + warning log
 
 **Verify:**
 - `/pd-run` -> navigate to Settings > Telemetry server
-- `/pd-screenshot` -> all sections visible: endpoint, health, toggles, sample rate, signals
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-server-settings.png` → read image: all sections visible — endpoint, health, toggles, sample rate, signals
 - Toggle a setting -> return -> setting persisted
 - Tap "Test" -> health card updates
 

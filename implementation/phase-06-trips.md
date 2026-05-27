@@ -104,7 +104,7 @@
 **Verify:**
 - `/pd-run` CRUISE scenario -> MPG row manual column shows accumulating MPG
 - Tap Reset -> value resets to "---"
-- `/pd-screenshot` -> MPG row visible with all 3 columns
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-manual-trip-mpg.png` → read image: MPG row visible with all 3 columns (instant, trip avg, manual avg)
 
 **Estimated size:** ~1.2k lines
 
@@ -156,5 +156,6 @@
 - `/pd-run` DISCONNECT scenario -> logcat shows trip start, pause, resume, end
 - `/pd-logs` -> "Auto trip started", "Auto trip paused", "Auto trip ended"
 - Query Room (via app inspection or logcat) -> trip entity exists with correct times
+- Navigate to Trips tab; Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-auto-trip-list.png` → read image: auto-detected trip entry visible in trip history list
 
 **Estimated size:** ~1.2k lines

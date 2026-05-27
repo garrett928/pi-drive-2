@@ -55,9 +55,9 @@
 
 **Verify:**
 - `/pd-run` -> navigate to Settings tab
-- `/pd-screenshot` -> vehicle card + all section rows visible
-- Tap theme -> switch to light -> `/pd-screenshot` -> light theme applied
-- Tap accent color -> switch to red -> `/pd-screenshot` -> red accent throughout
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-settings-root.png` → read image: vehicle card + all section rows visible
+- Tap theme -> switch to light; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-settings-light-theme.png` → read image: light theme applied
+- Tap accent color -> switch to red; Screenshot: `$ADB shell screencap -p /sdcard/screen3.png && $ADB pull /sdcard/screen3.png /tmp/pidrive-settings-red-accent.png` → read image: red accent throughout
 
 **Estimated size:** ~1.5k lines
 
@@ -104,8 +104,8 @@
 
 **Verify:**
 - `/pd-run` -> Settings > Phone home layout
-- `/pd-screenshot` -> featured selector + tile grid visible
-- Change featured metric to RPM -> back to dashboard -> `/pd-screenshot` -> RPM is now featured
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-layout-editor.png` → read image: featured selector + tile grid visible
+- Change featured metric to RPM -> back to dashboard; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-layout-rpm-featured.png` → read image: RPM is now the featured metric
 - Remove a tile, add a different one -> back to dashboard -> reflects changes
 
 **Estimated size:** ~1.5k lines
@@ -158,7 +158,7 @@
 
 **Verify:**
 - `/pd-run` -> Settings > Thresholds
-- `/pd-screenshot` -> both strategy cards visible, sliders functional
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-thresholds.png` → read image: both strategy cards visible, sliders functional
 - Enable G-Force without calibration -> warning banner shows
 - Change hard brake to 4 mph/s -> run HARD_BRAKE scenario -> events fire more frequently
 
@@ -207,7 +207,7 @@
 
 **Verify:**
 - `/pd-run` CITY scenario (generates multiple short trips via auto-detection)
-- Navigate to Trips tab -> `/pd-screenshot` -> weekly summary + trip list visible
+- Navigate to Trips tab; Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-trip-history.png` → read image: weekly summary + trip list visible
 - Trip cards show time, distance, duration
 - Tap a trip -> detail view -> share button visible
 
