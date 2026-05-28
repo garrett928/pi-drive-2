@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -15,19 +17,23 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ghart.space.pi_drive.shared.data.model.MetricId
+import ghart.space.pi_drive.shared.data.model.extractMetricValue
 import ghart.space.pi_drive.shared.ui.components.PDCard
 import ghart.space.pi_drive.shared.ui.components.PDPill
 import ghart.space.pi_drive.shared.ui.components.PillStyle
 import ghart.space.pi_drive.ui.components.FeaturedMetric
+import ghart.space.pi_drive.ui.components.MpgRow
 import ghart.space.pi_drive.ui.components.SparklineGraph
+import ghart.space.pi_drive.ui.components.TileGrid
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
 
 /**
  * Live vehicle data dashboard — the app's primary screen.
  *
  * Phase 3.1: Featured metric hero card with sparkline and LIVE pill.
- * Phase 3.2 will add the MPG row and metric tile grid below.
- * Phase 3.3 will add the connection banner and status bar.
+ * Phase 3.2: MPG summary row and 2-column metric tile grid below.
+ * Phase 3.3: Connection banner (top) and status bar (bottom).
  *
  * @param navController Used by future phases for navigation to connect/settings.
  * @param viewModel     Hilt-injected; provides live metric state flows.
@@ -40,10 +46,14 @@ fun LiveDashboardScreen(
     val featuredValue by viewModel.featuredValue.collectAsStateWithLifecycle()
     val sparklineData by viewModel.sparklineData.collectAsStateWithLifecycle()
     val isLive by viewModel.isLive.collectAsStateWithLifecycle()
+    val snapshot by viewModel.currentSnapshot.collectAsStateWithLifecycle()
+
+    val instantMpg = snapshot.extractMetricValue(MetricId.MPG_INSTANT).raw
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         FeaturedCard(
@@ -53,14 +63,34 @@ fun LiveDashboardScreen(
             sparklineData = sparklineData,
             isLive = isLive,
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        PDCard(
+            contentPadding = 16.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            MpgRow(
+                instantMpg = instantMpg,
+                tripMpg = null,
+                manualMpg = null,
+                onResetManual = { /* Phase 6 */ },
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        TileGrid(
+            snapshot = snapshot,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
 /**
  * Hero card containing the featured metric value, sparkline, and LIVE pill.
- *
- * Layout: PDCard with 18dp corner radius. Inside: a Box that overlays the LIVE
- * pill in the top-right corner over a Column of [FeaturedMetric] + [SparklineGraph].
  */
 @Composable
 private fun FeaturedCard(

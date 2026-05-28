@@ -5,8 +5,8 @@ Last updated: 2026-05-27
 ## Current State
 
 **Active phase:** Phase 3 -- Phone Dashboard
-**Active step:** 3.2 -- MPG row + tile grid
-**Project state:** Featured metric hero card + sparkline complete (Step 3.1 done). LiveDashboardViewModel (featuredValue/sparklineData/isLive StateFlows, 30s rolling buffer, SavedStateHandle metric persistence), FeaturedMetric composable (76sp monospace accent value + muted unit), SparklineGraph Canvas composable (accent stroke, gradient fill, glow dot), LIVE pill, PiDriveScaffold innerPadding fix. 219 unit tests green. Next: MPG row + tile grid.
+**Active step:** 3.3 -- Connection banner + status bar
+**Project state:** MPG row + tile grid complete (Step 3.2 done). MpgRow (instant/trip/manual MPG columns, Reset pill), DialWidget (270° arc gauge), BarWidget (fill bar, directional warning), NumberWidget (decimal readout), XYWidget (g-force crosshair + grid), MetricTile (PDCard wrapper), TileGrid (2-col grid, 6 default tiles), scrollable LiveDashboardScreen, ViewModel.currentSnapshot. 223 unit tests green. Next: connection banner + status bar.
 
 ## Completed
 
@@ -22,6 +22,7 @@ Last updated: 2026-05-27
 | 2.2 | PID support bitmask + VIN decoder | PidSupport (4-range decode + chaining), VinDecoder (multi-frame hex, year/WMI tables, VehicleInfo), InitializationSequence (Flow<InitStep>); 179 tests green |
 | 2.3 | OBD polling loop + OBDVehicleDataSource | OBDPollScheduler (priority round-robin), OBDVehicleDataSource (polling loop, ATRV battery, Hz tracking), MockTransport yield() fix, DataModule wired; 210 tests green |
 | 3.1 | Featured metric + sparkline | LiveDashboardViewModel (featuredValue/sparklineData/isLive, 30s rolling buffer), FeaturedMetric (76sp hero), SparklineGraph (Canvas, gradient fill, glow dot), LIVE pill, innerPadding fix; 219 tests green |
+| 3.2 | MPG row + tile grid | MpgRow (instant/trip/manual, Reset pill), DialWidget (270° arc), BarWidget (directional warning), NumberWidget, XYWidget (crosshair), MetricTile/TileGrid (2-col 6-tile grid), scrollable layout, ViewModel.currentSnapshot; 223 tests green |
 
 ## Step Status
 
@@ -41,7 +42,7 @@ Last updated: 2026-05-27
 | 2.3 | OBD polling loop + OBDVehicleDataSource | DONE | |
 | **Phase 3: Phone Dashboard** |
 | 3.1 | Featured metric + sparkline | DONE | |
-| 3.2 | MPG row + tile grid | NOT STARTED | |
+| 3.2 | MPG row + tile grid | DONE | |
 | 3.3 | Connection banner + status bar | NOT STARTED | |
 | **Phase 4: Bluetooth** |
 | 4.1 | BluetoothTransport | NOT STARTED | |

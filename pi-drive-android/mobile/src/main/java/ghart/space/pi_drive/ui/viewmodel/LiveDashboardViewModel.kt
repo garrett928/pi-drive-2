@@ -8,6 +8,7 @@ import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.MetricId
 import ghart.space.pi_drive.shared.data.model.MetricValue
+import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.data.model.extractMetricValue
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -70,6 +71,13 @@ class LiveDashboardViewModel @Inject constructor(
     val isLive: StateFlow<Boolean> = dataSource.connectionState
         .map { it is ConnectionState.Connected }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /**
+     * Latest raw snapshot — used by the MPG row and tile grid to extract
+     * individual metric values without needing separate StateFlows per metric.
+     */
+    val currentSnapshot: StateFlow<VehicleSnapshot> = dataSource.snapshot
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VehicleSnapshot.EMPTY)
 
     init {
         dataSource.startPolling()
