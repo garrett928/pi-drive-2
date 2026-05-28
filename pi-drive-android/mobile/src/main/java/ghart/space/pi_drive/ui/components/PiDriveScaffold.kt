@@ -1,6 +1,7 @@
 package ghart.space.pi_drive.ui.components
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,10 +67,12 @@ fun PiDriveScaffold() {
                 PiDriveBottomNav(navController)
             }
         },
-    ) { _ ->
+    ) { innerPadding ->
         PiDriveNavHost(
             navController = navController,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
         )
     }
 }

@@ -5,8 +5,8 @@ Last updated: 2026-05-27
 ## Current State
 
 **Active phase:** Phase 3 -- Phone Dashboard
-**Active step:** 3.1 -- Featured metric + sparkline
-**Project state:** Full OBD protocol layer complete (Steps 2.1–2.3 done). OBDPollScheduler (priority-tiered round-robin: high/medium/low PIDs), OBDVehicleDataSource (infinite polling loop, battery ATRV every 30s, poll-rate Hz tracking, ConnectionState lifecycle), MockTransport.yield() fix for cooperative coroutine scheduling. 210 unit tests green. DataModule wires OBDVehicleDataSource with MockTransport in non-demo mode. Next: Phase 3 phone dashboard UI.
+**Active step:** 3.2 -- MPG row + tile grid
+**Project state:** Featured metric hero card + sparkline complete (Step 3.1 done). LiveDashboardViewModel (featuredValue/sparklineData/isLive StateFlows, 30s rolling buffer, SavedStateHandle metric persistence), FeaturedMetric composable (76sp monospace accent value + muted unit), SparklineGraph Canvas composable (accent stroke, gradient fill, glow dot), LIVE pill, PiDriveScaffold innerPadding fix. 219 unit tests green. Next: MPG row + tile grid.
 
 ## Completed
 
@@ -21,6 +21,7 @@ Last updated: 2026-05-27
 | 2.1 | Command formatting + response parsing | OBDCommand sealed class, OBDResponse (ByteArray equality), ResponseParser (spaced/unspaced/multi-ECU/echo), PidDecoder (10 PIDs), FuelEconomy (MAF + fuel rate MPG); 131 tests green |
 | 2.2 | PID support bitmask + VIN decoder | PidSupport (4-range decode + chaining), VinDecoder (multi-frame hex, year/WMI tables, VehicleInfo), InitializationSequence (Flow<InitStep>); 179 tests green |
 | 2.3 | OBD polling loop + OBDVehicleDataSource | OBDPollScheduler (priority round-robin), OBDVehicleDataSource (polling loop, ATRV battery, Hz tracking), MockTransport yield() fix, DataModule wired; 210 tests green |
+| 3.1 | Featured metric + sparkline | LiveDashboardViewModel (featuredValue/sparklineData/isLive, 30s rolling buffer), FeaturedMetric (76sp hero), SparklineGraph (Canvas, gradient fill, glow dot), LIVE pill, innerPadding fix; 219 tests green |
 
 ## Step Status
 
@@ -39,7 +40,7 @@ Last updated: 2026-05-27
 | 2.2 | PID support bitmask + VIN decoder | DONE | |
 | 2.3 | OBD polling loop + OBDVehicleDataSource | DONE | |
 | **Phase 3: Phone Dashboard** |
-| 3.1 | Featured metric + sparkline | NOT STARTED | |
+| 3.1 | Featured metric + sparkline | DONE | |
 | 3.2 | MPG row + tile grid | NOT STARTED | |
 | 3.3 | Connection banner + status bar | NOT STARTED | |
 | **Phase 4: Bluetooth** |
