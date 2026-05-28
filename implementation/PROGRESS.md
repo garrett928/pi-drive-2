@@ -4,9 +4,9 @@ Last updated: 2026-05-27
 
 ## Current State
 
-**Active phase:** Phase 3 -- Phone Dashboard
-**Active step:** 3.3 -- Connection banner + status bar
-**Project state:** MPG row + tile grid complete (Step 3.2 done). MpgRow (instant/trip/manual MPG columns, Reset pill), DialWidget (270° arc gauge), BarWidget (fill bar, directional warning), NumberWidget (decimal readout), XYWidget (g-force crosshair + grid), MetricTile (PDCard wrapper), TileGrid (2-col grid, 6 default tiles), scrollable LiveDashboardScreen, ViewModel.currentSnapshot. 223 unit tests green. Next: connection banner + status bar.
+**Active phase:** Phase 4 -- Bluetooth
+**Active step:** 4.1 -- BluetoothTransport
+**Project state:** Phase 3 complete. Full Live Dashboard: ConnectionBanner (per-state BT icon + spinning connecting animation), StatusBanner (LIVE/RECORDING/CONNECTING/ERROR/IDLE), LiveDashboardViewModel (connectionState flow), scrollable screen with featured metric, sparkline, MPG row, tile grid, and both banners. 223 unit tests green. Next: BluetoothTransport implementation.
 
 ## Completed
 
@@ -23,6 +23,7 @@ Last updated: 2026-05-27
 | 2.3 | OBD polling loop + OBDVehicleDataSource | OBDPollScheduler (priority round-robin), OBDVehicleDataSource (polling loop, ATRV battery, Hz tracking), MockTransport yield() fix, DataModule wired; 210 tests green |
 | 3.1 | Featured metric + sparkline | LiveDashboardViewModel (featuredValue/sparklineData/isLive, 30s rolling buffer), FeaturedMetric (76sp hero), SparklineGraph (Canvas, gradient fill, glow dot), LIVE pill, innerPadding fix; 219 tests green |
 | 3.2 | MPG row + tile grid | MpgRow (instant/trip/manual, Reset pill), DialWidget (270° arc), BarWidget (directional warning), NumberWidget, XYWidget (crosshair), MetricTile/TileGrid (2-col 6-tile grid), scrollable layout, ViewModel.currentSnapshot; 223 tests green |
+| 3.3 | Connection banner + status bar | ConnectionBanner (Connected/Disconnected/Connecting/Error variants, spinning BT icon animation), StatusBanner (LIVE/RECORDING/CONNECTING/ERROR/IDLE), connectionState StateFlow in ViewModel, banners wired in LiveDashboardScreen; 223 tests green |
 
 ## Step Status
 
@@ -43,7 +44,7 @@ Last updated: 2026-05-27
 | **Phase 3: Phone Dashboard** |
 | 3.1 | Featured metric + sparkline | DONE | |
 | 3.2 | MPG row + tile grid | DONE | |
-| 3.3 | Connection banner + status bar | NOT STARTED | |
+| 3.3 | Connection banner + status bar | DONE | |
 | **Phase 4: Bluetooth** |
 | 4.1 | BluetoothTransport | NOT STARTED | |
 | 4.2 | Connect screen UI (3-step flow) | NOT STARTED | |

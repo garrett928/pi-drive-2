@@ -22,20 +22,30 @@ import ghart.space.pi_drive.shared.data.model.extractMetricValue
 import ghart.space.pi_drive.shared.ui.components.PDCard
 import ghart.space.pi_drive.shared.ui.components.PDPill
 import ghart.space.pi_drive.shared.ui.components.PillStyle
+import ghart.space.pi_drive.ui.components.ConnectionBanner
 import ghart.space.pi_drive.ui.components.FeaturedMetric
 import ghart.space.pi_drive.ui.components.MpgRow
 import ghart.space.pi_drive.ui.components.SparklineGraph
+import ghart.space.pi_drive.ui.components.StatusBanner
 import ghart.space.pi_drive.ui.components.TileGrid
+import ghart.space.pi_drive.ui.navigation.NavRoutes
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
 
 /**
  * Live vehicle data dashboard — the app's primary screen.
  *
- * Phase 3.1: Featured metric hero card with sparkline and LIVE pill.
- * Phase 3.2: MPG summary row and 2-column metric tile grid below.
- * Phase 3.3: Connection banner (top) and status bar (bottom).
+ * Layout (top to bottom, all scrollable):
+ * 1. [ConnectionBanner] — adapter state + tap-to-connect
+ * 2. [FeaturedCard] — hero metric + sparkline + LIVE pill
+ * 3. MPG row card
+ * 4. [TileGrid] — 2-column metric tiles
+ * 5. [StatusBanner] — recording / sync status (bottom of scroll content)
  *
- * @param navController Used by future phases for navigation to connect/settings.
+ * Phase 3.1: Featured metric + sparkline.
+ * Phase 3.2: MPG row + tile grid.
+ * Phase 3.3: Connection banner + status bar.
+ *
+ * @param navController Used to navigate to the connect flow from the banner.
  * @param viewModel     Hilt-injected; provides live metric state flows.
  */
 @Composable
@@ -47,6 +57,7 @@ fun LiveDashboardScreen(
     val sparklineData by viewModel.sparklineData.collectAsStateWithLifecycle()
     val isLive by viewModel.isLive.collectAsStateWithLifecycle()
     val snapshot by viewModel.currentSnapshot.collectAsStateWithLifecycle()
+    val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
 
     val instantMpg = snapshot.extractMetricValue(MetricId.MPG_INSTANT).raw
 
@@ -56,6 +67,14 @@ fun LiveDashboardScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
+        ConnectionBanner(
+            connectionState = connectionState,
+            onTap = { navController.navigate(NavRoutes.CONNECT_SCAN) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         FeaturedCard(
             value = featuredValue,
             unit = viewModel.featuredUnit,
@@ -85,7 +104,14 @@ fun LiveDashboardScreen(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        StatusBanner(
+            connectionState = connectionState,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 

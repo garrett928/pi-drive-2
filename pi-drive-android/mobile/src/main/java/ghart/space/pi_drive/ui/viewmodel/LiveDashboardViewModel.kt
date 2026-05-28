@@ -73,6 +73,13 @@ class LiveDashboardViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /**
+     * Full connection state — used by [ConnectionBanner] and [StatusBanner] for
+     * adapter name, protocol, poll rate, and error messages.
+     */
+    val connectionState: StateFlow<ConnectionState> = dataSource.connectionState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConnectionState.Disconnected)
+
+    /**
      * Latest raw snapshot — used by the MPG row and tile grid to extract
      * individual metric values without needing separate StateFlows per metric.
      */
