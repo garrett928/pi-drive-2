@@ -5,8 +5,8 @@ Last updated: 2026-05-27
 ## Current State
 
 **Active phase:** Phase 4 -- Bluetooth
-**Active step:** 4.1 -- BluetoothTransport
-**Project state:** Phase 3 complete. Full Live Dashboard: ConnectionBanner (per-state BT icon + spinning connecting animation), StatusBanner (LIVE/RECORDING/CONNECTING/ERROR/IDLE), LiveDashboardViewModel (connectionState flow), scrollable screen with featured metric, sparkline, MPG row, tile grid, and both banners. 223 unit tests green. Next: BluetoothTransport implementation.
+**Active step:** 4.2 -- Connect Screen UI (3-step flow)
+**Project state:** BluetoothTransport + TcpTransport + ResponseFramer complete (Step 4.1 done). ResponseFramer reads until `>` prompt, strips CR/LF, handles SocketTimeoutException → OBDTimeoutException. BluetoothTransport uses RFCOMM SPP UUID + runInterruptible timeout. TcpTransport uses soTimeout for ELM327 emulator. OBDTimeoutException domain exception. 231 unit tests green. Next: 3-step connect flow UI.
 
 ## Completed
 
@@ -24,6 +24,7 @@ Last updated: 2026-05-27
 | 3.1 | Featured metric + sparkline | LiveDashboardViewModel (featuredValue/sparklineData/isLive, 30s rolling buffer), FeaturedMetric (76sp hero), SparklineGraph (Canvas, gradient fill, glow dot), LIVE pill, innerPadding fix; 219 tests green |
 | 3.2 | MPG row + tile grid | MpgRow (instant/trip/manual, Reset pill), DialWidget (270° arc), BarWidget (directional warning), NumberWidget, XYWidget (crosshair), MetricTile/TileGrid (2-col 6-tile grid), scrollable layout, ViewModel.currentSnapshot; 223 tests green |
 | 3.3 | Connection banner + status bar | ConnectionBanner (Connected/Disconnected/Connecting/Error variants, spinning BT icon animation), StatusBanner (LIVE/RECORDING/CONNECTING/ERROR/IDLE), connectionState StateFlow in ViewModel, banners wired in LiveDashboardScreen; 223 tests green |
+| 4.1 | BluetoothTransport | ResponseFramer (read-until-prompt, SocketTimeoutException → OBDTimeoutException), BluetoothTransport (RFCOMM SPP, runInterruptible timeout), TcpTransport (soTimeout, ELM327 emulator), OBDTimeoutException domain type; 231 tests green |
 
 ## Step Status
 
@@ -46,7 +47,7 @@ Last updated: 2026-05-27
 | 3.2 | MPG row + tile grid | DONE | |
 | 3.3 | Connection banner + status bar | DONE | |
 | **Phase 4: Bluetooth** |
-| 4.1 | BluetoothTransport | NOT STARTED | |
+| 4.1 | BluetoothTransport | DONE | |
 | 4.2 | Connect screen UI (3-step flow) | NOT STARTED | |
 | 4.3 | Auto-reconnect + connection manager | NOT STARTED | |
 | **Phase 5: Detection** |
