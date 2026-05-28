@@ -46,7 +46,7 @@
 
 **Verify:**
 - `/pd-run` -> Settings > Android Auto layout
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-aa-layout-editor.png` → read image: preview canvas + slot editor visible
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-aa-layout-editor.png` → read image: preview canvas + slot editor visible
 - Change speed dial to RPM -> DHU shows RPM in first dial position
 - Reset -> DHU returns to default layout
 
@@ -84,7 +84,7 @@ The `TcpTransport` class was created in Step 4.1 alongside `BluetoothTransport`.
 - `/pd-obd` starts emulator + launches app in TCP mode
 - Connect flow completes (all checklist steps green)
 - Dashboard shows speed, RPM, coolant from emulator
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-tcp-dashboard.png` → read image: dashboard values match emulator's "car" scenario
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-tcp-dashboard.png` → read image: dashboard values match emulator's "car" scenario
 - `/pd-logs` -> "TcpTransport connected", PID values logged
 
 **Estimated size:** ~800 lines

@@ -1,12 +1,12 @@
 # Pi Drive -- Implementation Progress
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 ## Current State
 
-**Active phase:** Phase 2 -- OBD Protocol
-**Active step:** 2.2 -- PID support bitmask + VIN decoder
-**Project state:** OBD command/response layer complete (Step 2.1 done). OBDCommand sealed class (ATZ, ATE0, ATL0, ATS0, ATH0, ATSP, ATRV, PidRequest), OBDResponse sealed class (Success with ByteArray equality, NoData, Error, ATResponse), ResponseParser (handles spaced/unspaced hex, SEARCHING prefix, echo residue, multi-ECU), PidDecoder (10 decode functions), FuelEconomy (MAF-based and fuel-rate-based MPG). 131 unit tests green. Next: PID support bitmask, VIN decoder, InitializationSequence.
+**Active phase:** Phase 3 -- Phone Dashboard
+**Active step:** 3.1 -- Featured metric + sparkline
+**Project state:** Full OBD protocol layer complete (Steps 2.1–2.3 done). OBDPollScheduler (priority-tiered round-robin: high/medium/low PIDs), OBDVehicleDataSource (infinite polling loop, battery ATRV every 30s, poll-rate Hz tracking, ConnectionState lifecycle), MockTransport.yield() fix for cooperative coroutine scheduling. 210 unit tests green. DataModule wires OBDVehicleDataSource with MockTransport in non-demo mode. Next: Phase 3 phone dashboard UI.
 
 ## Completed
 
@@ -18,6 +18,9 @@ Last updated: 2026-05-26
 | 1.1 | Data models + interfaces | VehicleSnapshot, MetricId, MetricValue, ConnectionState, DrivingEvent, OBDTransport, VehicleDataSource, all unit-tested |
 | 1.2 | MockTransport + DemoVehicleDataSource | MockTransport with canned AT/PID responses; DemoVehicleDataSource with 8 scenarios (CRUISE, CITY, HIGHWAY, HARD_BRAKE, COLD_START, LOW_FUEL, OVERSPEED, DISCONNECT); Hilt DataModule + AppConfig; 30 unit tests green; device: "Demo mode active, scenario: CRUISE" logged |
 | 1.3 | Room database schema | 5 entities (snapshots, driving_events, auto_trips, manual_trips, pending_uploads), 5 DAOs, Converters (Instant/enum/Set<DataSource>), PiDriveDatabase v1, Hilt DatabaseModule; Robolectric added for JVM Room tests; 9 new tests, 79 total green |
+| 2.1 | Command formatting + response parsing | OBDCommand sealed class, OBDResponse (ByteArray equality), ResponseParser (spaced/unspaced/multi-ECU/echo), PidDecoder (10 PIDs), FuelEconomy (MAF + fuel rate MPG); 131 tests green |
+| 2.2 | PID support bitmask + VIN decoder | PidSupport (4-range decode + chaining), VinDecoder (multi-frame hex, year/WMI tables, VehicleInfo), InitializationSequence (Flow<InitStep>); 179 tests green |
+| 2.3 | OBD polling loop + OBDVehicleDataSource | OBDPollScheduler (priority round-robin), OBDVehicleDataSource (polling loop, ATRV battery, Hz tracking), MockTransport yield() fix, DataModule wired; 210 tests green |
 
 ## Step Status
 
@@ -31,11 +34,10 @@ Last updated: 2026-05-26
 | 1.1 | Data models + interfaces | DONE | |
 | 1.2 | MockTransport + DemoVehicleDataSource | DONE | |
 | 1.3 | Room database schema | DONE | |
-| 2.1 | Command formatting + response parsing | DONE | |
 | **Phase 2: OBD Protocol** |
 | 2.1 | Command formatting + response parsing | DONE | |
-| 2.2 | PID support bitmask + VIN decoder | NOT STARTED | |
-| 2.3 | OBD polling loop + OBDVehicleDataSource | NOT STARTED | |
+| 2.2 | PID support bitmask + VIN decoder | DONE | |
+| 2.3 | OBD polling loop + OBDVehicleDataSource | DONE | |
 | **Phase 3: Phone Dashboard** |
 | 3.1 | Featured metric + sparkline | NOT STARTED | |
 | 3.2 | MPG row + tile grid | NOT STARTED | |

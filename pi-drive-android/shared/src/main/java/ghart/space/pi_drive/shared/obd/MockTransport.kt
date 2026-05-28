@@ -3,6 +3,7 @@ package ghart.space.pi_drive.shared.obd
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.yield
 
 /**
  * In-memory OBD transport that returns canned responses without any network
@@ -54,6 +55,10 @@ class MockTransport : OBDTransport {
      * @return The simulated adapter response, trimmed.
      */
     override suspend fun send(command: String): String {
+        // Real transports (Bluetooth, TCP) always suspend during I/O. yield() here
+        // ensures cooperative coroutine scheduling in tests — without it, the infinite
+        // polling loop would never yield and test coroutines would starve.
+        yield()
         val upper = command.uppercase().trim()
 
         // 1. Caller-injected override

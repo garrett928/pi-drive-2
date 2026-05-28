@@ -47,7 +47,7 @@
 - Start emulator + DHU: `adb forward tcp:5277 tcp:5277` then `$ANDROID_HOME/extras/google/auto/desktop-head-unit`
 - `/pd-run` in demo mode on phone
 - DHU shows the dials screen with speed, RPM, coolant values updating
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-aa-dials.png` → read image: dials screen with speed, RPM, coolant visible on DHU
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-aa-dials.png` → read image: dials screen with speed, RPM, coolant visible on DHU
 - `/pd-logs` -> no CarAppService errors
 
 **Estimated size:** ~1.5k lines
@@ -84,7 +84,7 @@
 **Verify (DHU):**
 - Swipe or tap to switch between Dials and Graphs screens
 - Graphs screen shows throttle/g-force values and MPG stat box
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-aa-graphs.png` → read image: graphs screen with throttle/g-force values and MPG stat box
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-aa-graphs.png` → read image: graphs screen with throttle/g-force values and MPG stat box
 
 **Estimated size:** ~1.5k lines
 
@@ -121,8 +121,8 @@
 **Verify (DHU in wide mode):**
 - `desktop-head-unit --screen-width 1920 --screen-height 720 --dpi 160`
 - Start Google Maps in DHU, then Pi Drive appears in side panel
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-aa-split-p1.png` → read image: 1/3 panel with hero readout visible
-- Switch to Page 2; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-aa-split-p2.png` → read image: 6 metric tiles visible in 1/3 panel
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-aa-split-p1.png` → read image: 1/3 panel with hero readout visible
+- Switch to Page 2; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-aa-split-p2.png` → read image: 6 metric tiles visible in 1/3 panel
 
 **Estimated size:** ~1.5k lines
 
@@ -149,7 +149,7 @@
 **Verify (DHU):**
 - `/pd-run` with HARD_BRAKE scenario
 - Watch DHU -> CarToast appears on hard brake events
-- Screenshot during CarToast: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-aa-toast.png` → read image: CarToast overlay visible on DHU during hard brake event
+- Screenshot during CarToast: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-aa-toast.png` → read image: CarToast overlay visible on DHU during hard brake event
 - `/pd-logs` -> "CarToast: Hard braking" in logcat
 - Disable CarToast in settings -> no more toasts on DHU
 

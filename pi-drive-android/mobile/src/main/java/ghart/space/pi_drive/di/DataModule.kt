@@ -5,7 +5,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
+import ghart.space.pi_drive.shared.data.OBDVehicleDataSource
 import ghart.space.pi_drive.shared.data.VehicleDataSource
+import ghart.space.pi_drive.shared.obd.MockTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,17 +50,36 @@ object DataModule {
      *
      * The correct implementation is chosen at first-access time by reading
      * [AppConfig] — which [MainActivity] populates from the launch intent.
+     *
+     * | `isDemoMode` | `isTcpMode` | Implementation                         |
+     * |--------------|-------------|----------------------------------------|
+     * | true         | —           | [DemoVehicleDataSource]                |
+     * | false        | true        | [OBDVehicleDataSource] + TcpTransport (Phase 4) |
+     * | false        | false       | [OBDVehicleDataSource] + MockTransport (Phase 4 → BluetoothTransport) |
+     *
+     * Phase 4 will replace [MockTransport] with [TcpTransport] / [BluetoothTransport]
+     * once those classes are implemented and the initialization handshake is wired in.
      */
     @Provides
     @Singleton
     fun provideVehicleDataSource(
         @ApplicationScope scope: CoroutineScope,
     ): VehicleDataSource {
-        // Phase 4 will add: tcp_mode → TcpTransport + OBDVehicleDataSource
-        //                   production → BluetoothTransport + OBDVehicleDataSource
-        return DemoVehicleDataSource(
-            scenario        = AppConfig.demoScenario,
-            coroutineScope  = scope,
+        if (AppConfig.isDemoMode) {
+            return DemoVehicleDataSource(
+                scenario = AppConfig.demoScenario,
+                coroutineScope = scope,
+            )
+        }
+        // Phase 4: swap MockTransport for TcpTransport or BluetoothTransport,
+        // and run InitializationSequence to populate real supported PIDs.
+        val transport = MockTransport()
+        return OBDVehicleDataSource(
+            transport = transport,
+            initialSupportedPids = setOf(0x05, 0x0C, 0x0D, 0x0F, 0x10, 0x11, 0x2F, 0x5C, 0x5E),
+            coroutineScope = scope,
+            adapterName = "Mock Adapter",
+            protocol = "Simulated",
         )
     }
 }

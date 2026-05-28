@@ -107,7 +107,7 @@
 
 **Verify:**
 - `/pd-run` (launches in demo mode by default) -> logcat shows "Demo mode active, scenario: CRUISE"
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-demo-placeholder.png` → read image: app still shows placeholder text (UI isn't wired yet, but no crash)
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-demo-placeholder.png` → read image: app still shows placeholder text (UI isn't wired yet, but no crash)
 
 **Estimated size:** ~1.5k lines
 

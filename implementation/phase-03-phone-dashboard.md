@@ -43,7 +43,7 @@
 
 **Verify:**
 - `/pd-run` with CRUISE scenario
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-dashboard-launch.png` → read image: large speed value visible, sparkline animating, LIVE pill shown
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-dashboard-launch.png` → read image: large speed value visible, sparkline animating, LIVE pill shown
 - `/pd-logs` -> no errors, "Demo mode active" in logcat
 
 **Estimated size:** ~1.5k lines
@@ -99,9 +99,9 @@
 
 **Verify:**
 - `/pd-run` with CRUISE scenario
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-dashboard-full.png` → read image: featured metric + MPG row + 6 tiles all visible and updating
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-dashboard-full.png` → read image: featured metric + MPG row + 6 tiles all visible and updating
 - Scroll down to see all tiles
-- Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-dashboard-scrolled.png` → read image: bottom tiles visible
+- Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-dashboard-scrolled.png` → read image: bottom tiles visible
 
 **Estimated size:** ~2k lines
 
@@ -134,7 +134,7 @@
 
 **Verify:**
 - `/pd-run` -> demo mode shows Connected banner (since DemoVehicleDataSource reports connected)
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-dashboard-banner.png` → read image: connection banner visible at top with green dot, status bar at bottom
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-dashboard-banner.png` → read image: connection banner visible at top with green dot, status bar at bottom
 - Full dashboard layout matches design reference
 
 **Estimated size:** ~800 lines

@@ -116,8 +116,8 @@ Liveness / connection test. Used by the "Test" button in the server settings scr
 **Verify:**
 - `/pd-run` CRUISE scenario with a valid server URL configured in TelemetryConfig
 - `/pd-logs` -> `TelemetryUploader` tag: "POST /telemetry" requests logged at the configured sample rate
-- Screenshot (dashboard): `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-telemetry-active.png` → read image: dashboard live and streaming data
-- Navigate to Settings > Telemetry Server; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /tmp/pidrive-telemetry-settings.png` → read image: "Last upload" timestamp is recent
+- Screenshot (dashboard): `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-telemetry-active.png` → read image: dashboard live and streaming data
+- Navigate to Settings > Telemetry Server; Screenshot: `$ADB shell screencap -p /sdcard/screen2.png && $ADB pull /sdcard/screen2.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-telemetry-settings.png` → read image: "Last upload" timestamp is recent
 
 **Estimated size:** ~1.5k lines
 
@@ -160,7 +160,7 @@ Liveness / connection test. Used by the "Test" button in the server settings scr
 - `/pd-run` CRUISE scenario with server URL set to a non-existent host
 - `/pd-logs` -> "Upload failed, queuing for retry" messages
 - Set server URL to a mock endpoint (httpbin or local) -> queued data uploads
-- Screenshot (Settings > Telemetry Server): `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-offline-buffer.png` → read image: health section shows error state while server unreachable, then recovery after pointing to mock endpoint
+- Screenshot (Settings > Telemetry Server): `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-offline-buffer.png` → read image: health section shows error state while server unreachable, then recovery after pointing to mock endpoint
 
 **Estimated size:** ~1.2k lines
 
@@ -211,7 +211,7 @@ Liveness / connection test. Used by the "Test" button in the server settings scr
 
 **Verify:**
 - `/pd-run` -> navigate to Settings > Telemetry server
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-server-settings.png` → read image: all sections visible — endpoint, health, toggles, sample rate, signals
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-server-settings.png` → read image: all sections visible — endpoint, health, toggles, sample rate, signals
 - Toggle a setting -> return -> setting persisted
 - Tap "Test" -> health card updates
 

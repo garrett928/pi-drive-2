@@ -64,7 +64,7 @@
 - `./gradlew :mobile:assembleDebug` succeeds
 - `./gradlew :shared:assembleDebug` succeeds
 - `/pd-run` -> app launches showing "Pi Drive" text on dark background
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-bootstrap-launch.png` → read image: confirm Compose content renders
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-bootstrap-launch.png` → read image: confirm Compose content renders
 
 **Estimated size:** ~2k lines (mostly version catalog and build file changes)
 
@@ -98,7 +98,7 @@
 **Test criteria:**
 - `./gradlew :shared:test :mobile:test` passes
 - `/pd-run` -> app shows themed "Pi Drive" text in warm-orange accent on near-black background
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-theme.png` → read image: verify dark theme colors match spec
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-theme.png` → read image: verify dark theme colors match spec
 - Unit tests: verify accent color variants produce distinct Color instances
 
 **Estimated size:** ~1.5k lines
@@ -142,7 +142,7 @@
 **Test criteria:**
 - `/pd-run` -> app launches with 3 bottom tabs
 - Tapping each tab navigates to the correct placeholder screen
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-nav-tabs.png` → read image: all 3 tabs visible, correct tab highlighted
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-nav-tabs.png` → read image: all 3 tabs visible, correct tab highlighted
 - Navigate to settings sub-route programmatically, verify back button appears
 
 **Estimated size:** ~1.5k lines

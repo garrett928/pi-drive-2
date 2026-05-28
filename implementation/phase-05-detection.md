@@ -52,7 +52,7 @@
 **Verify:**
 - `/pd-run` HARD_BRAKE scenario
 - `/pd-logs` -> `AccelDetector` tag: "Hard brake detected, rate=X mph/s" logged within 15s
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-accel-detector.png` → read image: dashboard showing live speed data confirms AccelerationDetector receiving snapshots
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-accel-detector.png` → read image: dashboard showing live speed data confirms AccelerationDetector receiving snapshots
 
 **Estimated size:** ~1k lines
 
@@ -102,7 +102,7 @@
 **Verify:**
 - `/pd-run` HARD_BRAKE scenario
 - `/pd-logs` -> `GForceDetector` tag: cross-validation logic running; note: physical accelerometer not available on emulator, so OBD+GPS sources are used
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-gforce-detector.png` → read image: G-Force tile visible on dashboard, confirms sensor pipeline wired correctly
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-gforce-detector.png` → read image: G-Force tile visible on dashboard, confirms sensor pipeline wired correctly
 
 **Estimated size:** ~1.5k lines
 
@@ -152,7 +152,7 @@
 **Verify:**
 - `/pd-run` with HARD_BRAKE scenario
 - `/pd-logs` -> "HARD_BRAKE event" logged with rate/g values
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-alert-overlay.png` → read image: alert overlay visible when event fires
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-alert-overlay.png` → read image: alert overlay visible when event fires
 - `/pd-run` with LOW_FUEL scenario -> health alert fires when fuel drops below 10%
 
 **Estimated size:** ~1.5k lines

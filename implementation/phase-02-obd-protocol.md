@@ -148,6 +148,6 @@
 - `InitializationSequence` completes successfully
 - `OBDVehicleDataSource` emits snapshots with non-null speed and RPM
 - Run via: `/pd-obd` skill
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-obd-live.png` → read image: dashboard shows non-null speed and RPM values updating from ELM327 emulator
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-obd-live.png` → read image: dashboard shows non-null speed and RPM values updating from ELM327 emulator
 
 **Estimated size:** ~1.2k lines

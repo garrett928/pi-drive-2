@@ -17,6 +17,7 @@ import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 fun TripHistoryScreen(navController: NavController) {
     val colors = PiDriveTheme.colors
     Box(
+
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {

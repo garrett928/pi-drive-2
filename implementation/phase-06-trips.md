@@ -104,7 +104,7 @@
 **Verify:**
 - `/pd-run` CRUISE scenario -> MPG row manual column shows accumulating MPG
 - Tap Reset -> value resets to "---"
-- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-manual-trip-mpg.png` → read image: MPG row visible with all 3 columns (instant, trip avg, manual avg)
+- Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-manual-trip-mpg.png` → read image: MPG row visible with all 3 columns (instant, trip avg, manual avg)
 
 **Estimated size:** ~1.2k lines
 
@@ -156,6 +156,6 @@
 - `/pd-run` DISCONNECT scenario -> logcat shows trip start, pause, resume, end
 - `/pd-logs` -> "Auto trip started", "Auto trip paused", "Auto trip ended"
 - Query Room (via app inspection or logcat) -> trip entity exists with correct times
-- Navigate to Trips tab; Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /tmp/pidrive-auto-trip-list.png` → read image: auto-detected trip entry visible in trip history list
+- Navigate to Trips tab; Screenshot: `ADB=~/Library/Android/sdk/platform-tools/adb; mkdir -p /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots; $ADB shell screencap -p /sdcard/screen.png && $ADB pull /sdcard/screen.png /Users/ghart/Documents/garrett-files/projects/pi-drive-2/screenshots/pidrive-auto-trip-list.png` → read image: auto-detected trip entry visible in trip history list
 
 **Estimated size:** ~1.2k lines
