@@ -50,7 +50,7 @@ class DemoVehicleDataSource(
     private val _snapshot = MutableStateFlow(VehicleSnapshot.EMPTY)
     override val snapshot: StateFlow<VehicleSnapshot> = _snapshot.asStateFlow()
 
-    private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
+    private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     override val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
     private val _supportedPids = MutableStateFlow<Set<Int>>(DEMO_SUPPORTED_PIDS)
@@ -81,7 +81,7 @@ class DemoVehicleDataSource(
     override fun stopPolling() {
         pollingJob?.cancel()
         pollingJob = null
-        _connectionState.value = ConnectionState.Disconnected
+        _connectionState.value = ConnectionState.Disconnected()
         _snapshot.value = VehicleSnapshot.EMPTY
     }
 
@@ -95,9 +95,9 @@ class DemoVehicleDataSource(
     }
 
     private fun tickDisconnect(tick: Long) {
-        val phase = tick % 240L  // 60-second cycle at 4 Hz
+        val phase = tick % 240L  // 60-second cycle at 4 Hz (240 ticks = 60 s)
         if (phase < 120) {
-            // First 30 s: connected and emitting
+            // First 30 s: connected and emitting cruise data
             if (_connectionState.value is ConnectionState.Disconnected) {
                 _connectionState.value = ConnectionState.Connected(
                     adapterName = "Demo Mode (DISCONNECT)",
@@ -107,11 +107,11 @@ class DemoVehicleDataSource(
             }
             _snapshot.value = buildCruise(tick)
         } else {
-            // Next 30 s: disconnected
-            if (_connectionState.value !is ConnectionState.Disconnected) {
-                _connectionState.value = ConnectionState.Disconnected
-                _snapshot.value = VehicleSnapshot.EMPTY
-            }
+            // Next 30 s: simulate reconnect countdown (10-second retry interval)
+            val disconnectedTick = (phase - 120).toInt()  // 0..119
+            val retryIn = 10 - (disconnectedTick / 4) % 10  // counts 10..1 per 10s window
+            _connectionState.value = ConnectionState.Disconnected(canRetry = true, retryIn = retryIn)
+            _snapshot.value = VehicleSnapshot.EMPTY
         }
     }
 

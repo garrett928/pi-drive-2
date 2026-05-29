@@ -1,9 +1,12 @@
 package ghart.space.pi_drive
 
 import androidx.lifecycle.SavedStateHandle
+import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.DemoScenario
+import ghart.space.pi_drive.shared.obd.ConnectionManager
+import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,11 +32,13 @@ class ConnectionBannerViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        AppConfig.isDemoMode = true
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        AppConfig.isDemoMode = false
     }
 
     @Test
@@ -44,7 +49,7 @@ class ConnectionBannerViewModelTest {
         )
         // Create a data source but DON'T start polling — check initial state
         // (Note: ViewModel.init calls startPolling, so we check the initial value directly)
-        assertEquals(ConnectionState.Disconnected, dataSource.connectionState.value)
+        assertEquals(ConnectionState.Disconnected(), dataSource.connectionState.value)
     }
 
     @Test
@@ -54,8 +59,10 @@ class ConnectionBannerViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -80,8 +87,10 @@ class ConnectionBannerViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -104,8 +113,10 @@ class ConnectionBannerViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 

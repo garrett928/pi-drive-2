@@ -59,7 +59,7 @@ class OBDVehicleDataSource(
     private val _snapshot = MutableStateFlow(VehicleSnapshot.EMPTY)
     override val snapshot: StateFlow<VehicleSnapshot> = _snapshot.asStateFlow()
 
-    private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
+    private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     override val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
     private val _supportedPids = MutableStateFlow(initialSupportedPids)
@@ -97,7 +97,7 @@ class OBDVehicleDataSource(
     override fun stopPolling() {
         pollingJob?.cancel()
         pollingJob = null
-        _connectionState.value = ConnectionState.Disconnected
+        _connectionState.value = ConnectionState.Disconnected()
     }
 
     // ── Polling loop ──────────────────────────────────────────────────────

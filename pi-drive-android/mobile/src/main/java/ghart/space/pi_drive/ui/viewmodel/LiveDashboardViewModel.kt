@@ -4,8 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.data.model.ConnectionState
+import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.data.model.MetricId
 import ghart.space.pi_drive.shared.data.model.MetricValue
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
@@ -35,6 +37,7 @@ private const val SPARKLINE_BUFFER_SIZE = 120
 @HiltViewModel
 class LiveDashboardViewModel @Inject constructor(
     private val dataSource: VehicleDataSource,
+    private val connectionManager: ConnectionManager,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -75,9 +78,22 @@ class LiveDashboardViewModel @Inject constructor(
     /**
      * Full connection state — used by [ConnectionBanner] and [StatusBanner] for
      * adapter name, protocol, poll rate, and error messages.
+     *
+     * In demo mode, comes from [VehicleDataSource] (which simulates disconnect scenarios).
+     * In production mode, comes from [ConnectionManager] (manages actual BT reconnects).
      */
-    val connectionState: StateFlow<ConnectionState> = dataSource.connectionState
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConnectionState.Disconnected)
+    val connectionState: StateFlow<ConnectionState> = (
+        if (AppConfig.isDemoMode) dataSource.connectionState
+        else connectionManager.connectionState
+    ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConnectionState.Disconnected())
+
+    /**
+     * Triggers an immediate reconnect attempt via [ConnectionManager].
+     * No-op in demo mode (the demo data source manages its own state).
+     */
+    fun reconnectNow() {
+        if (!AppConfig.isDemoMode) connectionManager.reconnectNow()
+    }
 
     /**
      * Latest raw snapshot — used by the MPG row and tile grid to extract

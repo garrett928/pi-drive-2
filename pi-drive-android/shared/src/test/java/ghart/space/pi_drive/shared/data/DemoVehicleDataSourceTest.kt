@@ -49,7 +49,7 @@ class DemoVehicleDataSourceTest {
     @Test
     fun `initial connectionState is Disconnected`() = runTest {
         val source = makeSource(DemoScenario.CRUISE)
-        assertEquals(ConnectionState.Disconnected, source.connectionState.value)
+        assertEquals(ConnectionState.Disconnected(), source.connectionState.value)
     }
 
     @Test
@@ -91,7 +91,7 @@ class DemoVehicleDataSourceTest {
         advanceTimeBy(600)
 
         source.stopPolling()
-        assertEquals(ConnectionState.Disconnected, source.connectionState.value)
+        assertEquals(ConnectionState.Disconnected(), source.connectionState.value)
     }
 
     @Test

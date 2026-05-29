@@ -19,9 +19,15 @@ sealed class ConnectionState {
 
     /**
      * No connection attempt is in progress. The adapter is not connected.
-     * This is the initial state before the user initiates a Bluetooth pairing.
+     *
+     * @param canRetry  True when the connection manager is actively retrying.
+     *                  False when retries have been exhausted or no attempt has been made.
+     * @param retryIn   Seconds until the next automatic retry, or null if no timer is running.
      */
-    data object Disconnected : ConnectionState()
+    data class Disconnected(
+        val canRetry: Boolean = false,
+        val retryIn: Int? = null,
+    ) : ConnectionState()
 
     /**
      * A connection attempt is in progress — Bluetooth RFCOMM socket is opening

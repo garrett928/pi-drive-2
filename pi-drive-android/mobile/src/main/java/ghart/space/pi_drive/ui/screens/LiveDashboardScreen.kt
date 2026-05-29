@@ -70,6 +70,7 @@ fun LiveDashboardScreen(
         ConnectionBanner(
             connectionState = connectionState,
             onTap = { navController.navigate(NavRoutes.CONNECT_SCAN) },
+            onReconnectNow = { viewModel.reconnectNow() },
             modifier = Modifier.fillMaxWidth(),
         )
 

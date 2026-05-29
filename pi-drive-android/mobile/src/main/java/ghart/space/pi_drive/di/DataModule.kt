@@ -1,13 +1,20 @@
 package ghart.space.pi_drive.di
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.OBDVehicleDataSource
 import ghart.space.pi_drive.shared.data.VehicleDataSource
+import ghart.space.pi_drive.shared.obd.BluetoothTransport
+import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
+import ghart.space.pi_drive.shared.obd.TcpTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,6 +51,32 @@ object DataModule {
     @ApplicationScope
     fun provideApplicationScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /**
+     * Provides the [ConnectionManager] that manages Bluetooth reconnection.
+     *
+     * The transport factory switches between [MockTransport], [TcpTransport], and
+     * [BluetoothTransport] based on [AppConfig] flags.
+     */
+    @Provides
+    @Singleton
+    fun provideConnectionManager(
+        @ApplicationScope scope: CoroutineScope,
+        @ApplicationContext context: Context,
+    ): ConnectionManager = ConnectionManager(
+        scope = scope,
+        transportFactory = { address ->
+            @SuppressLint("MissingPermission")
+            when {
+                AppConfig.isDemoMode -> MockTransport()
+                AppConfig.isTcpMode  -> TcpTransport(AppConfig.tcpHost, AppConfig.tcpPort)
+                else -> {
+                    val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+                    BluetoothTransport(btManager.adapter.getRemoteDevice(address))
+                }
+            }
+        },
+    )
 
     /**
      * Provides the [VehicleDataSource] that drives all telemetry consumers.

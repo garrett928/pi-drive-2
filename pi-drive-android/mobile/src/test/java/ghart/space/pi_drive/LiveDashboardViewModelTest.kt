@@ -1,9 +1,12 @@
 package ghart.space.pi_drive
 
 import androidx.lifecycle.SavedStateHandle
+import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.model.DemoScenario
 import ghart.space.pi_drive.shared.data.model.MetricId
+import ghart.space.pi_drive.shared.obd.ConnectionManager
+import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -31,11 +34,13 @@ class LiveDashboardViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        AppConfig.isDemoMode = true
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        AppConfig.isDemoMode = false
     }
 
     // ── Metadata tests (no coroutine needed) ──────────────────────────────────
@@ -46,8 +51,10 @@ class LiveDashboardViewModelTest {
             scenario = DemoScenario.CRUISE,
             coroutineScope = backgroundScope,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
         assertEquals(MetricId.SPEED, viewModel.featuredMetricId)
@@ -59,8 +66,10 @@ class LiveDashboardViewModelTest {
             scenario = DemoScenario.CRUISE,
             coroutineScope = backgroundScope,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
         assertEquals("mph", viewModel.featuredUnit)
@@ -74,8 +83,10 @@ class LiveDashboardViewModelTest {
             coroutineScope = backgroundScope,
         )
         val handle = SavedStateHandle(mapOf("featured_metric" to "RPM"))
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = handle,
         )
         assertEquals(MetricId.RPM, viewModel.featuredMetricId)
@@ -90,8 +101,10 @@ class LiveDashboardViewModelTest {
             coroutineScope = backgroundScope,
         )
         val handle = SavedStateHandle(mapOf("featured_metric" to "NOT_A_METRIC"))
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = handle,
         )
         assertEquals(MetricId.SPEED, viewModel.featuredMetricId)
@@ -106,8 +119,10 @@ class LiveDashboardViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -126,8 +141,10 @@ class LiveDashboardViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -147,8 +164,10 @@ class LiveDashboardViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -168,8 +187,10 @@ class LiveDashboardViewModelTest {
             coroutineScope = backgroundScope,
             tickIntervalMs = 100L,
         )
+        val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
+            connectionManager = stubManager,
             savedStateHandle = SavedStateHandle(),
         )
 

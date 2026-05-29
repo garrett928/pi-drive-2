@@ -188,7 +188,7 @@ class OBDVehicleDataSourceTest {
     @Test
     fun `connectionState starts as Disconnected`() = runTest {
         val ds = makeDataSource(scope = backgroundScope)
-        assertEquals(ConnectionState.Disconnected, ds.connectionState.value)
+        assertEquals(ConnectionState.Disconnected(), ds.connectionState.value)
     }
 
     @Test
@@ -229,7 +229,7 @@ class OBDVehicleDataSourceTest {
         ds.snapshot.filter { it != VehicleSnapshot.EMPTY }.first()
         ds.stopPolling()
 
-        assertEquals(ConnectionState.Disconnected, ds.connectionState.value)
+        assertEquals(ConnectionState.Disconnected(), ds.connectionState.value)
     }
 
     @Test

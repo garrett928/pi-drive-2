@@ -4,9 +4,9 @@ Last updated: 2026-05-28
 
 ## Current State
 
-**Active phase:** Phase 4 -- Bluetooth
-**Active step:** 4.3 -- Auto-reconnect + connection manager
-**Project state:** Connect flow UI complete (Step 4.2 done). ConnectScanScreen (BT device list + pulsing animation), ConnectPairScreen (6-step init checklist + progress bar), ConnectDoneScreen (vehicle info card). ConnectCoordinator (pure Kotlin, testable), ConnectViewModel (Hilt, scoped to CONNECT_GRAPH nested nav for shared state). 5 new ConnectCoordinator tests. 231 unit tests green. Fixed nested nav graph sharing so all 3 screens use one ViewModel instance. Next: auto-reconnect + ConnectionManager.
+**Active phase:** Phase 5 -- Detection
+**Active step:** 5.1 -- Acceleration detector (mph/s)
+**Project state:** Phase 4 complete. ConnectionManager (pure Kotlin, injectable clock, backgroundScope-safe tests), AdapterWatcher (BroadcastReceiver for ACL_DISCONNECTED), ConnectionState.Disconnected upgraded to data class (canRetry, retryIn). ConnectionBanner shows "Reconnecting in Xs…" countdown with "Now" button. Demo DISCONNECT scenario simulates reconnect countdown. LiveDashboardViewModel injects ConnectionManager. 236 unit tests green. Next: acceleration detector.
 
 ## Completed
 
@@ -26,6 +26,7 @@ Last updated: 2026-05-28
 | 3.3 | Connection banner + status bar | ConnectionBanner (Connected/Disconnected/Connecting/Error variants, spinning BT icon animation), StatusBanner (LIVE/RECORDING/CONNECTING/ERROR/IDLE), connectionState StateFlow in ViewModel, banners wired in LiveDashboardScreen; 223 tests green |
 | 4.1 | BluetoothTransport | ResponseFramer (read-until-prompt, SocketTimeoutException → OBDTimeoutException), BluetoothTransport (RFCOMM SPP, runInterruptible timeout), TcpTransport (soTimeout, ELM327 emulator), OBDTimeoutException domain type; 231 tests green |
 | 4.2 | Connect Screen UI | ConnectScanScreen + ConnectPairScreen + ConnectDoneScreen; ConnectCoordinator (pure Kotlin, 6-step state machine); ConnectViewModel (HiltVM, scoped to nested CONNECT_GRAPH for shared state); 5 coordinator tests; screenshots in screenshots/ |
+| 4.3 | Auto-reconnect + connection manager | ConnectionManager (5-min retry window, injectable clock, backgroundScope-safe); AdapterWatcher (BroadcastReceiver ACL_DISCONNECTED); ConnectionState.Disconnected(canRetry, retryIn); ConnectionBanner reconnecting row with countdown; 236 tests green |
 
 ## Step Status
 
@@ -50,7 +51,7 @@ Last updated: 2026-05-28
 | **Phase 4: Bluetooth** |
 | 4.1 | BluetoothTransport | DONE | |
 | 4.2 | Connect screen UI (3-step flow) | DONE | |
-| 4.3 | Auto-reconnect + connection manager | NOT STARTED | |
+| 4.3 | Auto-reconnect + connection manager | DONE | |
 | **Phase 5: Detection** |
 | 5.1 | Acceleration detector (mph/s) | NOT STARTED | |
 | 5.2 | G-Force detector (sensor fusion) | NOT STARTED | |
