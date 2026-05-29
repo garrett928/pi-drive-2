@@ -1,12 +1,12 @@
 # Pi Drive -- Implementation Progress
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 ## Current State
 
-**Active phase:** Phase 5 -- Detection
-**Active step:** 5.3 -- Alert system + health alerts
-**Project state:** Phase 5.2 complete. GForceDetector (3-source cross-validation: OBD delta, GPS delta, accelerometer), AccelerometerManager (TYPE_LINEAR_ACCELERATION sensor, low-pass filter, calibration persistence), CalibrationManager (axis/variance detection). DemoVehicleDataSource now emits gpsSpeedMps so OBD+GPS cross-validation works in demo. 268 unit tests green. Verified: "Hard brake detected via G-force, peak=1.13g [SEVERE], sources=[OBD, GPS]" in HARD_BRAKE demo. Next: AlertManager + HealthMonitor + AlertOverlay UI.
+**Active phase:** Phase 6 -- Trips
+**Active step:** 6.1 -- Trip accumulator
+**Project state:** Phase 5 complete. AlertManager (accepts merged Flow<DrivingEvent> + Flow<HealthAlert>, DB logging, per-type cooldown), HealthMonitor (5 alert types: coolant/fuel/RPM/speed/battery, PID auto-disable, per-type cooldown), AlertOverlay UI (slideInVertically + fadeIn, 3s auto-dismiss, haptic feedback), LiveDashboardViewModel.currentAlert + dismissAlert. 284 unit tests green. Next: TripAccumulator.
 
 ## Completed
 
@@ -29,6 +29,7 @@ Last updated: 2026-05-28
 | 4.3 | Auto-reconnect + connection manager | ConnectionManager (5-min retry window, injectable clock, backgroundScope-safe); AdapterWatcher (BroadcastReceiver ACL_DISCONNECTED); ConnectionState.Disconnected(canRetry, retryIn); ConnectionBanner reconnecting row with countdown; 236 tests green |
 | 5.1 | Acceleration detector (mph/s) | DetectionConfig; AccelerationDetector (OBD-primary/GPS-fallback, IDLE→DETECTING→COOLDOWN state machine, peak-rate tracking); AccelerationDetectorTest (9 tests); injected in MainActivity after AppConfig set; 251 tests green; verified: "Hard brake detected, rate=24.5 mph/s" in HARD_BRAKE demo |
 | 5.2 | G-Force detector (sensor fusion) | GForceDetector (≥2/3 source cross-validation: OBD+GPS+accel), AccelerometerManager (TYPE_LINEAR_ACCELERATION, low-pass filter α=0.8, SharedPrefs calibration), CalibrationManager (axis/variance selection); GForceDetectorTest (7 tests), AccelerometerManagerTest (10 tests); DemoVehicleDataSource updated to emit gpsSpeedMps; 268 tests green; verified: "Hard brake detected via G-force, peak=1.13g [SEVERE], sources=[OBD, GPS]" |
+| 5.3 | Alert system + health alerts | AlertManager (accepts Flow<DrivingEvent>+Flow<HealthAlert>, DB logging, per-type cooldown, isSevere), HealthMonitor (5 types, PID auto-disable, per-type cooldown), AlertAction sealed class, AlertOverlay+AlertBanner UI (slideInVertically, 3s auto-dismiss, haptic), LiveDashboardViewModel.currentAlert; AlertManagerTest (6 tests), HealthMonitorTest (8 tests); 284 tests green |
 
 ## Step Status
 
@@ -56,8 +57,8 @@ Last updated: 2026-05-28
 | 4.3 | Auto-reconnect + connection manager | DONE | |
 | **Phase 5: Detection** |
 | 5.1 | Acceleration detector (mph/s) | DONE | |
-| 5.2 | G-Force detector (sensor fusion) | DONE | |
-| 5.3 | Alert system + health alerts | NOT STARTED | |
+| 5.2 | G-Force detector (sensor fusion) | DONE | 35e5af9 |
+| 5.3 | Alert system + health alerts | DONE | |
 | **Phase 6: Trips** |
 | 6.1 | Trip accumulator | NOT STARTED | |
 | 6.2 | Manual trip manager | NOT STARTED | |

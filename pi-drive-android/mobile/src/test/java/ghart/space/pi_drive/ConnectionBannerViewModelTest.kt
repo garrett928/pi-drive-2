@@ -3,11 +3,16 @@ package ghart.space.pi_drive
 import androidx.lifecycle.SavedStateHandle
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
+import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
+import ghart.space.pi_drive.shared.data.db.entity.DrivingEventEntity
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.DemoScenario
+import ghart.space.pi_drive.shared.data.model.EventType
+import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.take
@@ -23,6 +28,23 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
+
+/** Builds a no-op [AlertManager] suitable for ViewModel tests that don't test alert behavior. */
+private fun noOpAlertManager(scope: CoroutineScope): AlertManager {
+    val fakeDao = object : DrivingEventDao {
+        override suspend fun insert(event: DrivingEventEntity) = 0L
+        override suspend fun getByTimeRange(from: Instant, to: Instant) = emptyList<DrivingEventEntity>()
+        override suspend fun getByTripId(tripId: Long) = emptyList<DrivingEventEntity>()
+        override suspend fun countByTypeAndTimeRange(type: EventType, from: Instant, to: Instant) = 0
+    }
+    return AlertManager(
+        drivingEvents = kotlinx.coroutines.flow.emptyFlow(),
+        healthAlerts = kotlinx.coroutines.flow.emptyFlow(),
+        eventDao = fakeDao,
+        scope = scope,
+    )
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConnectionBannerViewModelTest {
@@ -63,6 +85,7 @@ class ConnectionBannerViewModelTest {
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
             connectionManager = stubManager,
+            alertManager = noOpAlertManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -91,6 +114,7 @@ class ConnectionBannerViewModelTest {
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
             connectionManager = stubManager,
+            alertManager = noOpAlertManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -117,6 +141,7 @@ class ConnectionBannerViewModelTest {
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
             connectionManager = stubManager,
+            alertManager = noOpAlertManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 

@@ -22,6 +22,7 @@ import ghart.space.pi_drive.shared.data.model.extractMetricValue
 import ghart.space.pi_drive.shared.ui.components.PDCard
 import ghart.space.pi_drive.shared.ui.components.PDPill
 import ghart.space.pi_drive.shared.ui.components.PillStyle
+import ghart.space.pi_drive.ui.components.AlertOverlay
 import ghart.space.pi_drive.ui.components.ConnectionBanner
 import ghart.space.pi_drive.ui.components.FeaturedMetric
 import ghart.space.pi_drive.ui.components.MpgRow
@@ -58,61 +59,73 @@ fun LiveDashboardScreen(
     val isLive by viewModel.isLive.collectAsStateWithLifecycle()
     val snapshot by viewModel.currentSnapshot.collectAsStateWithLifecycle()
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
+    val currentAlert by viewModel.currentAlert.collectAsStateWithLifecycle()
 
     val instantMpg = snapshot.extractMetricValue(MetricId.MPG_INSTANT).raw
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-    ) {
-        ConnectionBanner(
-            connectionState = connectionState,
-            onTap = { navController.navigate(NavRoutes.CONNECT_SCAN) },
-            onReconnectNow = { viewModel.reconnectNow() },
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        FeaturedCard(
-            value = featuredValue,
-            unit = viewModel.featuredUnit,
-            label = viewModel.featuredLabel,
-            sparklineData = sparklineData,
-            isLive = isLive,
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        PDCard(
-            contentPadding = 16.dp,
-            modifier = Modifier.fillMaxWidth(),
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            MpgRow(
-                instantMpg = instantMpg,
-                tripMpg = null,
-                manualMpg = null,
-                onResetManual = { /* Phase 6 */ },
+            ConnectionBanner(
+                connectionState = connectionState,
+                onTap = { navController.navigate(NavRoutes.CONNECT_SCAN) },
+                onReconnectNow = { viewModel.reconnectNow() },
+                modifier = Modifier.fillMaxWidth(),
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FeaturedCard(
+                value = featuredValue,
+                unit = viewModel.featuredUnit,
+                label = viewModel.featuredLabel,
+                sparklineData = sparklineData,
+                isLive = isLive,
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PDCard(
+                contentPadding = 16.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                MpgRow(
+                    instantMpg = instantMpg,
+                    tripMpg = null,
+                    manualMpg = null,
+                    onResetManual = { /* Phase 6 */ },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TileGrid(
+                snapshot = snapshot,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            StatusBanner(
+                connectionState = connectionState,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        TileGrid(
-            snapshot = snapshot,
-            modifier = Modifier.fillMaxWidth(),
+        AlertOverlay(
+            alert = currentAlert,
+            onDismiss = viewModel::dismissAlert,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .align(Alignment.TopCenter),
         )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        StatusBanner(
-            connectionState = connectionState,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 

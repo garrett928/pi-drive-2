@@ -6,17 +6,22 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.VehicleDataSource
+import ghart.space.pi_drive.shared.data.model.AlertAction
 import ghart.space.pi_drive.shared.data.model.ConnectionState
+import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.data.model.MetricId
 import ghart.space.pi_drive.shared.data.model.MetricValue
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.data.model.extractMetricValue
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -38,6 +43,7 @@ private const val SPARKLINE_BUFFER_SIZE = 120
 class LiveDashboardViewModel @Inject constructor(
     private val dataSource: VehicleDataSource,
     private val connectionManager: ConnectionManager,
+    private val alertManager: AlertManager,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -102,8 +108,28 @@ class LiveDashboardViewModel @Inject constructor(
     val currentSnapshot: StateFlow<VehicleSnapshot> = dataSource.snapshot
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VehicleSnapshot.EMPTY)
 
+    private val _currentAlert = MutableStateFlow<AlertAction?>(null)
+
+    /**
+     * The currently active alert banner, or null when no alert is showing.
+     *
+     * Set to non-null when [AlertManager] emits an [AlertAction]; reset to null
+     * either by the auto-dismiss timer in [AlertOverlay] or by [dismissAlert].
+     */
+    val currentAlert: StateFlow<AlertAction?> = _currentAlert.asStateFlow()
+
+    /** Clears the current alert, hiding the overlay banner. */
+    fun dismissAlert() {
+        _currentAlert.value = null
+    }
+
     init {
         dataSource.startPolling()
+        viewModelScope.launch {
+            alertManager.alerts.collect { action ->
+                _currentAlert.value = action
+            }
+        }
     }
 
     override fun onCleared() {

@@ -13,8 +13,12 @@ import ghart.space.pi_drive.shared.data.OBDVehicleDataSource
 import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
 import ghart.space.pi_drive.shared.detection.AccelerometerManager
+import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.DetectionConfig
 import ghart.space.pi_drive.shared.detection.GForceDetector
+import ghart.space.pi_drive.shared.detection.HealthMonitor
+import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
+import kotlinx.coroutines.flow.merge
 import ghart.space.pi_drive.shared.obd.BluetoothTransport
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
@@ -22,7 +26,6 @@ import ghart.space.pi_drive.shared.obd.TcpTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import javax.inject.Singleton
 
 /**
@@ -122,32 +125,25 @@ object DataModule {
     }
 
     /**
-     * Provides and starts the [AccelerationDetector] that watches the live snapshot stream.
+     * Provides the [AccelerationDetector] that watches the live snapshot stream.
      *
-     * The detector's event flow is launched immediately in [scope] so that events are
-     * logged even before the alert system (Phase 5.3) subscribes. Phase 5.3 will replace
-     * this launch with a proper [AlertManager] subscription.
+     * Event collection is managed by [AlertManager], which merges both detector flows
+     * and routes events to the DB and UI.
      */
     @Provides
     @Singleton
     fun provideAccelerationDetector(
         dataSource: VehicleDataSource,
-        @ApplicationScope scope: CoroutineScope,
-    ): AccelerationDetector {
-        val detector = AccelerationDetector(
-            snapshots = dataSource.snapshot,
-            config = DetectionConfig(),
-        )
-        scope.launch { detector.events().collect { /* AlertManager subscribes in Phase 5.3 */ } }
-        return detector
-    }
+    ): AccelerationDetector = AccelerationDetector(
+        snapshots = dataSource.snapshot,
+        config = DetectionConfig(),
+    )
 
     /**
      * Provides the [AccelerometerManager] singleton.
      *
-     * The manager is not started here — it is started by [MainActivity] after it injects
-     * it alongside [AccelerationDetector], so that the sensor is registered only when the
-     * app is in the foreground.
+     * Not started here — [MainActivity] starts it after Hilt injection so the sensor
+     * is registered only while the app is in the foreground.
      */
     @Provides
     @Singleton
@@ -156,25 +152,57 @@ object DataModule {
     ): AccelerometerManager = AccelerometerManager(context)
 
     /**
-     * Provides the [GForceDetector] and launches its event collection loop.
+     * Provides the [GForceDetector].
      *
-     * [gForceEnabled] is enabled here so that cross-validation logging runs even without
-     * a calibrated accelerometer — on the emulator or an uncalibrated device, only the
-     * OBD and GPS sources vote.  Phase 5.3 will route emitted events through [AlertManager].
+     * [gForceEnabled] is true so cross-validation logging runs even on the emulator
+     * (where the physical accelerometer is unavailable) using only OBD and GPS sources.
+     * Event collection is managed by [AlertManager].
      */
     @Provides
     @Singleton
     fun provideGForceDetector(
         dataSource: VehicleDataSource,
         accelManager: AccelerometerManager,
+    ): GForceDetector = GForceDetector(
+        snapshots = dataSource.snapshot,
+        accelMps2Flow = accelManager.longitudinalMps2,
+        config = DetectionConfig(gForceEnabled = true),
+    )
+
+    /**
+     * Provides the [HealthMonitor] that watches live snapshots for vehicle health thresholds.
+     *
+     * Uses the data source's supported-PID set to auto-skip checks for metrics the vehicle
+     * does not expose.
+     */
+    @Provides
+    @Singleton
+    fun provideHealthMonitor(
+        dataSource: VehicleDataSource,
+    ): HealthMonitor = HealthMonitor(
+        snapshots = dataSource.snapshot,
+        supportedPids = dataSource.supportedPids,
+    )
+
+    /**
+     * Provides the [AlertManager] and starts its event-collection loops.
+     *
+     * Merges both detector event flows into a single [drivingEvents] stream and passes
+     * the health monitor's alert flow directly. All driving events are persisted to Room
+     * and filtered through cooldown logic before reaching the UI.
+     */
+    @Provides
+    @Singleton
+    fun provideAlertManager(
+        accelDetector: AccelerationDetector,
+        gForceDetector: GForceDetector,
+        healthMonitor: HealthMonitor,
+        eventDao: DrivingEventDao,
         @ApplicationScope scope: CoroutineScope,
-    ): GForceDetector {
-        val detector = GForceDetector(
-            snapshots = dataSource.snapshot,
-            accelMps2Flow = accelManager.longitudinalMps2,
-            config = DetectionConfig(gForceEnabled = true),
-        )
-        scope.launch { detector.events().collect { /* AlertManager subscribes in Phase 5.3 */ } }
-        return detector
-    }
+    ): AlertManager = AlertManager(
+        drivingEvents = merge(accelDetector.events(), gForceDetector.events()),
+        healthAlerts = healthMonitor.alerts(),
+        eventDao = eventDao,
+        scope = scope,
+    )
 }

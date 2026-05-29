@@ -10,6 +10,7 @@ import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.model.DemoScenario
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
 import ghart.space.pi_drive.shared.detection.AccelerometerManager
+import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 import ghart.space.pi_drive.ui.components.PiDriveScaffold
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var accelDetector: AccelerationDetector
     @Inject lateinit var gForceDetector: GForceDetector
     @Inject lateinit var accelManager: AccelerometerManager
+    @Inject lateinit var alertManager: AlertManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
