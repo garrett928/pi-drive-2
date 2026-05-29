@@ -9,6 +9,11 @@ import dagger.hilt.android.HiltAndroidApp
  * the component hierarchy used throughout the app.
  *
  * All Hilt modules are discovered automatically — no manual registration needed.
+ *
+ * Note: [AccelerationDetector] is injected in [MainActivity] (not here) so that
+ * [AppConfig] is populated from intent extras before the Hilt singleton graph is
+ * first accessed — [PiDriveApplication.onCreate] runs before any Activity, so
+ * [AppConfig] flags would still be at default values here.
  */
 @HiltAndroidApp
 class PiDriveApplication : Application() {

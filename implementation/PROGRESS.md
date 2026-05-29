@@ -5,8 +5,8 @@ Last updated: 2026-05-28
 ## Current State
 
 **Active phase:** Phase 5 -- Detection
-**Active step:** 5.1 -- Acceleration detector (mph/s)
-**Project state:** Phase 4 complete. ConnectionManager (pure Kotlin, injectable clock, backgroundScope-safe tests), AdapterWatcher (BroadcastReceiver for ACL_DISCONNECTED), ConnectionState.Disconnected upgraded to data class (canRetry, retryIn). ConnectionBanner shows "Reconnecting in Xs…" countdown with "Now" button. Demo DISCONNECT scenario simulates reconnect countdown. LiveDashboardViewModel injects ConnectionManager. 236 unit tests green. Next: acceleration detector.
+**Active step:** 5.2 -- G-Force detector (sensor fusion)
+**Project state:** Phase 5.1 complete. AccelerationDetector (OBD-primary/GPS-fallback, mph/s state machine, IDLE→DETECTING→COOLDOWN), DetectionConfig (all thresholds), GForceDetector skeleton. AccelerationDetector injected in MainActivity (after AppConfig is set from intent extras) so correct VehicleDataSource is used. 251 unit tests green. Verified: "Hard brake detected, rate=24.5 mph/s" in HARD_BRAKE demo. Next: G-Force detector with sensor fusion (3-source cross-validation).
 
 ## Completed
 
@@ -27,6 +27,7 @@ Last updated: 2026-05-28
 | 4.1 | BluetoothTransport | ResponseFramer (read-until-prompt, SocketTimeoutException → OBDTimeoutException), BluetoothTransport (RFCOMM SPP, runInterruptible timeout), TcpTransport (soTimeout, ELM327 emulator), OBDTimeoutException domain type; 231 tests green |
 | 4.2 | Connect Screen UI | ConnectScanScreen + ConnectPairScreen + ConnectDoneScreen; ConnectCoordinator (pure Kotlin, 6-step state machine); ConnectViewModel (HiltVM, scoped to nested CONNECT_GRAPH for shared state); 5 coordinator tests; screenshots in screenshots/ |
 | 4.3 | Auto-reconnect + connection manager | ConnectionManager (5-min retry window, injectable clock, backgroundScope-safe); AdapterWatcher (BroadcastReceiver ACL_DISCONNECTED); ConnectionState.Disconnected(canRetry, retryIn); ConnectionBanner reconnecting row with countdown; 236 tests green |
+| 5.1 | Acceleration detector (mph/s) | DetectionConfig; AccelerationDetector (OBD-primary/GPS-fallback, IDLE→DETECTING→COOLDOWN state machine, peak-rate tracking); AccelerationDetectorTest (9 tests); injected in MainActivity after AppConfig set; 251 tests green; verified: "Hard brake detected, rate=24.5 mph/s" in HARD_BRAKE demo |
 
 ## Step Status
 
@@ -53,7 +54,7 @@ Last updated: 2026-05-28
 | 4.2 | Connect screen UI (3-step flow) | DONE | |
 | 4.3 | Auto-reconnect + connection manager | DONE | |
 | **Phase 5: Detection** |
-| 5.1 | Acceleration detector (mph/s) | NOT STARTED | |
+| 5.1 | Acceleration detector (mph/s) | DONE | |
 | 5.2 | G-Force detector (sensor fusion) | NOT STARTED | |
 | 5.3 | Alert system + health alerts | NOT STARTED | |
 | **Phase 6: Trips** |

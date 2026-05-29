@@ -11,6 +11,8 @@ import dagger.hilt.components.SingletonComponent
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.OBDVehicleDataSource
 import ghart.space.pi_drive.shared.data.VehicleDataSource
+import ghart.space.pi_drive.shared.detection.AccelerationDetector
+import ghart.space.pi_drive.shared.detection.DetectionConfig
 import ghart.space.pi_drive.shared.obd.BluetoothTransport
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
@@ -18,6 +20,7 @@ import ghart.space.pi_drive.shared.obd.TcpTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Singleton
 
 /**
@@ -114,5 +117,26 @@ object DataModule {
             adapterName = "Mock Adapter",
             protocol = "Simulated",
         )
+    }
+
+    /**
+     * Provides and starts the [AccelerationDetector] that watches the live snapshot stream.
+     *
+     * The detector's event flow is launched immediately in [scope] so that events are
+     * logged even before the alert system (Phase 5.3) subscribes. Phase 5.3 will replace
+     * this launch with a proper [AlertManager] subscription.
+     */
+    @Provides
+    @Singleton
+    fun provideAccelerationDetector(
+        dataSource: VehicleDataSource,
+        @ApplicationScope scope: CoroutineScope,
+    ): AccelerationDetector {
+        val detector = AccelerationDetector(
+            snapshots = dataSource.snapshot,
+            config = DetectionConfig(),
+        )
+        scope.launch { detector.events().collect { /* AlertManager subscribes in Phase 5.3 */ } }
+        return detector
     }
 }

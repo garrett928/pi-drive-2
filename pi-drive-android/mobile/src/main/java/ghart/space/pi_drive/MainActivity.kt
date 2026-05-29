@@ -8,8 +8,10 @@ import androidx.activity.enableEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.model.DemoScenario
+import ghart.space.pi_drive.shared.detection.AccelerationDetector
 import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 import ghart.space.pi_drive.ui.components.PiDriveScaffold
+import javax.inject.Inject
 
 /**
  * Main entry point for the Pi Drive phone app.
@@ -24,9 +26,15 @@ import ghart.space.pi_drive.ui.components.PiDriveScaffold
  * - `tcp_mode` (Boolean) — route OBD traffic through a TCP ELM327 emulator
  * - `tcp_host` (String) — emulator host (default: 10.0.2.2 = localhost in emulator)
  * - `tcp_port` (Int) — emulator port (default: 35000)
+ *
+ * [AccelerationDetector] is injected here (rather than in [PiDriveApplication]) so that
+ * [AppConfig] flags are set before the Hilt singleton graph is first accessed, ensuring
+ * the detector collects from the correct [VehicleDataSource] implementation.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var accelDetector: AccelerationDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
