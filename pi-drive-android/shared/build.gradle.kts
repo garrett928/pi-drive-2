@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
 }
 
@@ -75,6 +76,10 @@ dependencies {
 
     // Network
     implementation(libs.okhttp)
+
+    // Hilt (required for @AndroidEntryPoint on TelemetryService)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
 
     // Testing
     testImplementation(libs.junit)

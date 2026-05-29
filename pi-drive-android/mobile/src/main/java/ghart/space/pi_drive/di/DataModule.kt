@@ -27,6 +27,7 @@ import ghart.space.pi_drive.shared.obd.BluetoothTransport
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.shared.obd.TcpTransport
+import ghart.space.pi_drive.shared.telemetry.TelemetryConfigRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -226,6 +227,17 @@ object DataModule {
         dao = dao,
         scope = scope,
     )
+
+    /**
+     * Provides the [TelemetryConfigRepository] that persists [TelemetryConfig] to SharedPreferences.
+     *
+     * [TelemetryService] depends on this to load the server URL, API key, and device ID at startup.
+     */
+    @Provides
+    @Singleton
+    fun provideTelemetryConfigRepository(
+        @ApplicationContext context: Context,
+    ): TelemetryConfigRepository = TelemetryConfigRepository(context)
 
     /**
      * Provides the [AlertManager] and starts its event-collection loops.

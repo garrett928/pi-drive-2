@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:name=".PiDriveApplication"
@@ -39,6 +40,11 @@
                 <category android:name="androidx.car.app.category.IOT" />
             </intent-filter>
         </service>
+
+        <service
+            android:name="ghart.space.pi_drive.shared.telemetry.TelemetryService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
     </application>
 

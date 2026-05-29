@@ -4,9 +4,9 @@ Last updated: 2026-05-29
 
 ## Current State
 
-**Active phase:** Phase 6 -- Trips
-**Active step:** 7.1 -- Telemetry payload + HTTP uploader
-**Project state:** Phase 6 complete. AutoTripDetector (connection-event-based trip boundaries, 5-min end timeout, TripAccumulator, Room persistence), AutoTripManager (owns detector, exposes currentTrip StateFlow + tripHistory Flow), AutoTripState data class, wired into LiveDashboardViewModel. AutoTripDetectorTest (5 tests). 323 tests green. Next: TelemetryPayload + HTTP uploader.
+**Active phase:** Phase 7 -- Telemetry
+**Active step:** 7.2 -- Offline buffer + WorkManager
+**Project state:** Phase 7.1 complete. TelemetryPayload + nested data classes (@Serializable), TelemetryConfig + VinSource, TelemetryConfigRepository (SharedPreferences JSON), PayloadBuilder (signal selection, VIN guard, unit conversion), TelemetryUploader (OkHttp, HTTPS validation, upload/checkHealth/getLatestTimestamp), TelemetryUploadController (testable upload loop), TelemetryService (foreground service, dataSync type). Hilt added to :shared module. 354 tests green. Next: Offline buffer + WorkManager.
 
 ## Completed
 
@@ -33,6 +33,7 @@ Last updated: 2026-05-29
 | 6.1 | Trip accumulator | TripAccumulator (speed→distance/duration integration, pause/resume, maxSpeed, avgSpeed), FuelTracker (fuel rate + MAF paths, currentMpg, tripAverageMpg), TripSummary; TripAccumulatorTest (13 tests), FuelTrackerTest (13 tests); 312 tests green |
 | 6.2 | Manual trip manager | ManualTripManager (Room persistence, pause/resume on connect/disconnect, 10s periodic save, DB restore on restart), ManualTripState, wired into LiveDashboardViewModel + MPG row reset button; ManualTripManagerTest (6 tests, UnconfinedTestDispatcher); 318 tests green |
 | 6.3 | Auto-detected trips | AutoTripDetector (connection-event trip boundaries, 5-min end timeout, TripAccumulator integration, Room persistence), AutoTripManager (thin coordinator + currentTrip/tripHistory flows), AutoTripState; AutoTripDetectorTest (5 tests); wired into LiveDashboardViewModel; 323 tests green |
+| 7.1 | Telemetry payload + HTTP uploader | TelemetryPayload (@Serializable), TelemetryConfig + VinSource, TelemetryConfigRepository (SharedPreferences), PayloadBuilder (signal selection + VIN guard), TelemetryUploader (OkHttp, HTTPS-only), TelemetryUploadController (testable loop), TelemetryService (foreground service); Hilt added to :shared; 31 new tests, 354 total green |
 
 ## Step Status
 
@@ -67,7 +68,7 @@ Last updated: 2026-05-29
 | 6.2 | Manual trip manager | DONE | 59baf57 |
 | 6.3 | Auto-detected trips | DONE | |
 | **Phase 7: Telemetry** |
-| 7.1 | Telemetry payload + HTTP uploader | NOT STARTED | |
+| 7.1 | Telemetry payload + HTTP uploader | DONE | |
 | 7.2 | Offline buffer + WorkManager | NOT STARTED | |
 | 7.3 | Server settings screen | NOT STARTED | |
 | **Phase 8: Settings** |
