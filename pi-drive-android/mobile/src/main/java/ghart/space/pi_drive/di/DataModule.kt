@@ -18,6 +18,8 @@ import ghart.space.pi_drive.shared.detection.DetectionConfig
 import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.detection.HealthMonitor
 import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
+import ghart.space.pi_drive.shared.data.db.dao.ManualTripDao
+import ghart.space.pi_drive.shared.trip.ManualTripManager
 import kotlinx.coroutines.flow.merge
 import ghart.space.pi_drive.shared.obd.BluetoothTransport
 import ghart.space.pi_drive.shared.obd.ConnectionManager
@@ -182,6 +184,26 @@ object DataModule {
     ): HealthMonitor = HealthMonitor(
         snapshots = dataSource.snapshot,
         supportedPids = dataSource.supportedPids,
+    )
+
+    /**
+     * Provides the [ManualTripManager] singleton.
+     *
+     * Feeds snapshots and connection state from the [VehicleDataSource] and persists
+     * accumulated state to [ManualTripDao] every 10 seconds. The user resets the trip
+     * from the dashboard "Reset" button, which calls [ManualTripManager.reset].
+     */
+    @Provides
+    @Singleton
+    fun provideManualTripManager(
+        dataSource: VehicleDataSource,
+        dao: ManualTripDao,
+        @ApplicationScope scope: CoroutineScope,
+    ): ManualTripManager = ManualTripManager(
+        snapshots = dataSource.snapshot,
+        connectionState = dataSource.connectionState,
+        dao = dao,
+        scope = scope,
     )
 
     /**

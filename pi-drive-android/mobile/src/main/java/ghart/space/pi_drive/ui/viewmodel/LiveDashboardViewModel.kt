@@ -9,8 +9,10 @@ import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.data.model.AlertAction
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.detection.AlertManager
+import ghart.space.pi_drive.shared.data.model.ManualTripState
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.data.model.MetricId
+import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.shared.data.model.MetricValue
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.data.model.extractMetricValue
@@ -44,6 +46,7 @@ class LiveDashboardViewModel @Inject constructor(
     private val dataSource: VehicleDataSource,
     private val connectionManager: ConnectionManager,
     private val alertManager: AlertManager,
+    private val manualTripManager: ManualTripManager,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -107,6 +110,24 @@ class LiveDashboardViewModel @Inject constructor(
      */
     val currentSnapshot: StateFlow<VehicleSnapshot> = dataSource.snapshot
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VehicleSnapshot.EMPTY)
+
+    /**
+     * Current state of the user-controlled manual trip segment.
+     *
+     * Delegates directly to [ManualTripManager.state]. [isActive] is true once the user
+     * has tapped Reset at least once. [avgMpg] populates the manual column of the MPG row.
+     */
+    val manualTripState: StateFlow<ManualTripState> = manualTripManager.state
+
+    /**
+     * Resets the manual trip counter.
+     *
+     * Closes the current trip in Room and starts a fresh one. The MPG row manual column
+     * will immediately show "—" until new fuel data arrives.
+     */
+    fun resetManualTrip() {
+        manualTripManager.reset()
+    }
 
     private val _currentAlert = MutableStateFlow<AlertAction?>(null)
 

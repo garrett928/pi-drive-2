@@ -61,6 +61,7 @@ fun LiveDashboardScreen(
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val currentAlert by viewModel.currentAlert.collectAsStateWithLifecycle()
 
+    val manualTripState by viewModel.manualTripState.collectAsStateWithLifecycle()
     val instantMpg = snapshot.extractMetricValue(MetricId.MPG_INSTANT).raw
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -96,8 +97,8 @@ fun LiveDashboardScreen(
                 MpgRow(
                     instantMpg = instantMpg,
                     tripMpg = null,
-                    manualMpg = null,
-                    onResetManual = { /* Phase 6 */ },
+                    manualMpg = manualTripState.avgMpg,
+                    onResetManual = viewModel::resetManualTrip,
                 )
             }
 

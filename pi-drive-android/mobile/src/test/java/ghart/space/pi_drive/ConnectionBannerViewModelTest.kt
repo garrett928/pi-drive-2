@@ -4,17 +4,24 @@ import androidx.lifecycle.SavedStateHandle
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
+import ghart.space.pi_drive.shared.data.db.dao.ManualTripDao
 import ghart.space.pi_drive.shared.data.db.entity.DrivingEventEntity
+import ghart.space.pi_drive.shared.data.db.entity.ManualTripEntity
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.DemoScenario
 import ghart.space.pi_drive.shared.data.model.EventType
+import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
+import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -29,6 +36,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
+
+/** Builds a no-op [ManualTripManager] suitable for ViewModel tests that don't test trip behavior. */
+private fun noOpManualTripManager(scope: CoroutineScope): ManualTripManager {
+    val fakeDao = object : ManualTripDao {
+        override suspend fun insert(trip: ManualTripEntity) = 0L
+        override suspend fun update(trip: ManualTripEntity) {}
+        override suspend fun getActive(): ManualTripEntity? = null
+        override fun getAll(): Flow<List<ManualTripEntity>> = emptyFlow()
+    }
+    return ManualTripManager(
+        snapshots = MutableStateFlow(VehicleSnapshot.EMPTY),
+        connectionState = MutableStateFlow(ConnectionState.Disconnected()),
+        dao = fakeDao,
+        scope = scope,
+    )
+}
 
 /** Builds a no-op [AlertManager] suitable for ViewModel tests that don't test alert behavior. */
 private fun noOpAlertManager(scope: CoroutineScope): AlertManager {
@@ -86,6 +109,7 @@ class ConnectionBannerViewModelTest {
             dataSource = dataSource,
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
+            manualTripManager = noOpManualTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -115,6 +139,7 @@ class ConnectionBannerViewModelTest {
             dataSource = dataSource,
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
+            manualTripManager = noOpManualTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -142,6 +167,7 @@ class ConnectionBannerViewModelTest {
             dataSource = dataSource,
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
+            manualTripManager = noOpManualTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
