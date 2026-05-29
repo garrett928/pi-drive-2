@@ -1,17 +1,10 @@
 package ghart.space.pi_drive.shared.telemetry
 
-import ghart.space.pi_drive.shared.data.db.dao.PendingUploadDao
-import ghart.space.pi_drive.shared.data.db.entity.PendingUploadEntity
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.slot
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 import java.time.Instant
@@ -19,13 +12,13 @@ import java.time.Instant
 /**
  * Unit tests for [TelemetryUploadController].
  *
- * Tests the core upload-loop business logic in isolation — no Android Service lifecycle or
- * Flow required. Calls [TelemetryUploadController.processSnapshot] directly.
+ * Tests the core upload-loop business logic — no Android Service lifecycle or Flow required.
+ * Calls [TelemetryUploadController.processSnapshot] directly.
  */
 class TelemetryServiceTest {
 
     private val mockUploader = mockk<TelemetryUploader>()
-    private val mockDao = mockk<PendingUploadDao>()
+    private val mockBuffer = mockk<OfflineBuffer>()
 
     private val configWithVin = TelemetryConfig(
         deviceId = "device-001",
@@ -46,7 +39,7 @@ class TelemetryServiceTest {
     private fun makeController() = TelemetryUploadController(
         snapshots = kotlinx.coroutines.flow.emptyFlow(),
         uploader = mockUploader,
-        pendingDao = mockDao,
+        offlineBuffer = mockBuffer,
     )
 
     // ── Upload attempts ────────────────────────────────────────────────────────
@@ -66,53 +59,49 @@ class TelemetryServiceTest {
         coVerify(exactly = 5) { mockUploader.upload(any()) }
     }
 
-    @Test fun `successful upload does not queue to Room`() = runTest {
+    @Test fun `successful upload does not enqueue to offline buffer`() = runTest {
         coEvery { mockUploader.upload(any()) } returns Result.success(Unit)
         val controller = makeController()
 
         controller.processSnapshot(snapshot, emptyList(), configWithVin)
 
-        coVerify(exactly = 0) { mockDao.insert(any()) }
+        coVerify(exactly = 0) { mockBuffer.enqueue(any()) }
     }
 
     // ── Upload failure → queued ────────────────────────────────────────────────
 
-    @Test fun `upload failure queues payload to Room`() = runTest {
+    @Test fun `upload failure enqueues payload to offline buffer`() = runTest {
         coEvery { mockUploader.upload(any()) } returns Result.failure(IOException("timeout"))
-        val insertedSlot = slot<PendingUploadEntity>()
-        coEvery { mockDao.insert(capture(insertedSlot)) } returns 1L
-        coEvery { mockDao.countPending() } returns 1
-
+        coEvery { mockBuffer.enqueue(any()) } returns Unit
         val controller = makeController()
+
         controller.processSnapshot(snapshot, emptyList(), configWithVin)
 
-        coVerify(exactly = 1) { mockDao.insert(any()) }
-        assertTrue("Queued payload should not be blank", insertedSlot.captured.payload.isNotBlank())
-        assertEquals(snapshot.timestamp, insertedSlot.captured.timestamp)
+        coVerify(exactly = 1) { mockBuffer.enqueue(any()) }
     }
 
-    @Test fun `upload failure with bufferWhenOffline=false does not queue`() = runTest {
+    @Test fun `upload failure with bufferWhenOffline=false does not enqueue`() = runTest {
         coEvery { mockUploader.upload(any()) } returns Result.failure(IOException("timeout"))
         val config = configWithVin.copy(bufferWhenOffline = false)
         val controller = makeController()
 
         controller.processSnapshot(snapshot, emptyList(), config)
 
-        coVerify(exactly = 0) { mockDao.insert(any()) }
+        coVerify(exactly = 0) { mockBuffer.enqueue(any()) }
     }
 
     // ── Blank VIN → skip ──────────────────────────────────────────────────────
 
-    @Test fun `blank VIN skips upload without queuing`() = runTest {
+    @Test fun `blank VIN skips upload without enqueueing`() = runTest {
         val controller = makeController()
 
         controller.processSnapshot(snapshot, emptyList(), configBlankVin)
 
         coVerify(exactly = 0) { mockUploader.upload(any()) }
-        coVerify(exactly = 0) { mockDao.insert(any()) }
+        coVerify(exactly = 0) { mockBuffer.enqueue(any()) }
     }
 
-    @Test fun `blank VIN with 5 snapshots never uploads or queues`() = runTest {
+    @Test fun `blank VIN with 5 snapshots never uploads or enqueues`() = runTest {
         val controller = makeController()
 
         repeat(5) {
@@ -120,6 +109,6 @@ class TelemetryServiceTest {
         }
 
         coVerify(exactly = 0) { mockUploader.upload(any()) }
-        coVerify(exactly = 0) { mockDao.insert(any()) }
+        coVerify(exactly = 0) { mockBuffer.enqueue(any()) }
     }
 }

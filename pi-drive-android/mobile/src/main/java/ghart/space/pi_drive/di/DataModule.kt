@@ -27,7 +27,10 @@ import ghart.space.pi_drive.shared.obd.BluetoothTransport
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.shared.obd.TcpTransport
+import ghart.space.pi_drive.shared.data.db.dao.PendingUploadDao
+import ghart.space.pi_drive.shared.telemetry.OfflineBuffer
 import ghart.space.pi_drive.shared.telemetry.TelemetryConfigRepository
+import ghart.space.pi_drive.shared.telemetry.UploadWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -238,6 +241,30 @@ object DataModule {
     fun provideTelemetryConfigRepository(
         @ApplicationContext context: Context,
     ): TelemetryConfigRepository = TelemetryConfigRepository(context)
+
+    /**
+     * Provides the [OfflineBuffer] that queues failed uploads for later retry.
+     *
+     * Wraps [PendingUploadDao] with serialization and exponential back-off logic.
+     * Both [TelemetryUploadController] and [UploadWorker] use this buffer.
+     */
+    @Provides
+    @Singleton
+    fun provideOfflineBuffer(dao: PendingUploadDao): OfflineBuffer = OfflineBuffer(dao)
+
+    /**
+     * Provides the [UploadWorker.Factory] registered as the app's [androidx.work.WorkerFactory].
+     *
+     * [PiDriveApplication] implements [androidx.work.Configuration.Provider] and returns a
+     * [androidx.work.DelegatingWorkerFactory] that includes this factory, so WorkManager can
+     * construct [UploadWorker] with its [OfflineBuffer] and [TelemetryConfigRepository] deps.
+     */
+    @Provides
+    @Singleton
+    fun provideUploadWorkerFactory(
+        offlineBuffer: OfflineBuffer,
+        configRepository: TelemetryConfigRepository,
+    ): UploadWorker.Factory = UploadWorker.Factory(offlineBuffer, configRepository)
 
     /**
      * Provides the [AlertManager] and starts its event-collection loops.

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import ghart.space.pi_drive.shared.data.db.entity.PendingUploadEntity
 import java.time.Instant
 
@@ -45,4 +46,17 @@ interface PendingUploadDao {
     /** Returns the total count of items currently in the upload queue. */
     @Query("SELECT COUNT(*) FROM pending_uploads")
     suspend fun countPending(): Int
+
+    /** Fetches a single upload entity by its primary key; returns null if not found. */
+    @Query("SELECT * FROM pending_uploads WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): PendingUploadEntity?
+
+    /**
+     * Persists an updated [PendingUploadEntity] in-place, matched by [PendingUploadEntity.id].
+     *
+     * Used by [OfflineBuffer.incrementRetry] to bump [PendingUploadEntity.retryCount] and
+     * advance [PendingUploadEntity.nextRetryTime] with exponential back-off.
+     */
+    @Update
+    suspend fun update(entity: PendingUploadEntity)
 }

@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
 
+    // WorkManager (needed for Configuration.Provider + DelegatingWorkerFactory in Application)
+    implementation(libs.work.runtime.ktx)
+
     implementation(libs.androidx.app.projected)
 
     testImplementation(libs.junit)

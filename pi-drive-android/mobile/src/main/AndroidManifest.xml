@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
@@ -45,6 +46,22 @@
             android:name="ghart.space.pi_drive.shared.telemetry.TelemetryService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!--
+            Disable the default WorkManager startup initializer so that
+            PiDriveApplication.workManagerConfiguration is used instead.
+            Required when implementing Configuration.Provider with a custom WorkerFactory.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="@string/androidx_startup"
+                tools:node="remove" />
+        </provider>
 
     </application>
 

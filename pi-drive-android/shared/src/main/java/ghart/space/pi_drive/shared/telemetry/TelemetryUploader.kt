@@ -47,6 +47,30 @@ class TelemetryUploader(
     }
 
     /**
+     * POSTs a pre-serialized JSON [payloadJson] string to `{serverUrl}/telemetry`.
+     *
+     * Used by [UploadWorker] to avoid a round-trip deserialize-then-reserialize cycle when
+     * retrying payloads read from the [OfflineBuffer] (which already stores them as JSON).
+     */
+    suspend fun uploadRaw(payloadJson: String): Result<Unit> = withContext(Dispatchers.IO) {
+        validateHttps().onFailure { return@withContext Result.failure(it) }
+
+        val body = payloadJson.toRequestBody(JSON_MEDIA)
+        val request = buildRequest("$serverUrl/telemetry").post(body).build()
+
+        execute(request) { response ->
+            if (response.isSuccessful) {
+                Log.d(TAG, "POST /telemetry (raw) → ${response.code}")
+                Result.success(Unit)
+            } else {
+                val msg = "POST /telemetry (raw) failed: HTTP ${response.code}"
+                Log.w(TAG, msg)
+                Result.failure(IOException(msg))
+            }
+        }
+    }
+
+    /**
      * POSTs [payload] to `{serverUrl}/telemetry`.
      *
      * Returns [Result.success] on HTTP 200; [Result.failure] for HTTP errors, network

@@ -5,8 +5,8 @@ Last updated: 2026-05-29
 ## Current State
 
 **Active phase:** Phase 7 -- Telemetry
-**Active step:** 7.2 -- Offline buffer + WorkManager
-**Project state:** Phase 7.1 complete. TelemetryPayload + nested data classes (@Serializable), TelemetryConfig + VinSource, TelemetryConfigRepository (SharedPreferences JSON), PayloadBuilder (signal selection, VIN guard, unit conversion), TelemetryUploader (OkHttp, HTTPS validation, upload/checkHealth/getLatestTimestamp), TelemetryUploadController (testable upload loop), TelemetryService (foreground service, dataSync type). Hilt added to :shared module. 354 tests green. Next: Offline buffer + WorkManager.
+**Active step:** 7.3 -- Server settings screen
+**Project state:** Phase 7.2 complete. OfflineBuffer (PendingUploadDao wrapper, exponential back-off, max 10 retries), UploadWorker (CoroutineWorker with custom Factory + testable processBatch), UploadScheduler (15-min periodic + one-shot trigger). PiDriveApplication implements Configuration.Provider with DelegatingWorkerFactory. WorkManagerInitializer removed from manifest startup. TelemetryUploadController now uses OfflineBuffer. 369 tests green. Next: Server settings screen.
 
 ## Completed
 
@@ -34,6 +34,7 @@ Last updated: 2026-05-29
 | 6.2 | Manual trip manager | ManualTripManager (Room persistence, pause/resume on connect/disconnect, 10s periodic save, DB restore on restart), ManualTripState, wired into LiveDashboardViewModel + MPG row reset button; ManualTripManagerTest (6 tests, UnconfinedTestDispatcher); 318 tests green |
 | 6.3 | Auto-detected trips | AutoTripDetector (connection-event trip boundaries, 5-min end timeout, TripAccumulator integration, Room persistence), AutoTripManager (thin coordinator + currentTrip/tripHistory flows), AutoTripState; AutoTripDetectorTest (5 tests); wired into LiveDashboardViewModel; 323 tests green |
 | 7.1 | Telemetry payload + HTTP uploader | TelemetryPayload (@Serializable), TelemetryConfig + VinSource, TelemetryConfigRepository (SharedPreferences), PayloadBuilder (signal selection + VIN guard), TelemetryUploader (OkHttp, HTTPS-only), TelemetryUploadController (testable loop), TelemetryService (foreground service); Hilt added to :shared; 31 new tests, 354 total green |
+| 7.2 | Offline buffer + WorkManager | OfflineBuffer (DAO wrapper, exponential back-off 30 s→24 h, max 10 retries), UploadWorker (custom Factory + processBatch), UploadScheduler (15-min periodic + one-shot); PiDriveApplication.Configuration.Provider + DelegatingWorkerFactory; WorkManagerInitializer removed; 15 new tests, 369 total green |
 
 ## Step Status
 
@@ -68,8 +69,8 @@ Last updated: 2026-05-29
 | 6.2 | Manual trip manager | DONE | 59baf57 |
 | 6.3 | Auto-detected trips | DONE | |
 | **Phase 7: Telemetry** |
-| 7.1 | Telemetry payload + HTTP uploader | DONE | |
-| 7.2 | Offline buffer + WorkManager | NOT STARTED | |
+| 7.1 | Telemetry payload + HTTP uploader | DONE | 3957f78 |
+| 7.2 | Offline buffer + WorkManager | DONE | |
 | 7.3 | Server settings screen | NOT STARTED | |
 | **Phase 8: Settings** |
 | 8.1 | Settings root + general settings | NOT STARTED | |
