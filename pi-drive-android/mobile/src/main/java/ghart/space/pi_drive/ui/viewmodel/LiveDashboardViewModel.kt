@@ -9,9 +9,11 @@ import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.data.model.AlertAction
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.detection.AlertManager
+import ghart.space.pi_drive.shared.data.model.AutoTripState
 import ghart.space.pi_drive.shared.data.model.ManualTripState
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.data.model.MetricId
+import ghart.space.pi_drive.shared.trip.AutoTripManager
 import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.shared.data.model.MetricValue
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
@@ -47,6 +49,7 @@ class LiveDashboardViewModel @Inject constructor(
     private val connectionManager: ConnectionManager,
     private val alertManager: AlertManager,
     private val manualTripManager: ManualTripManager,
+    private val autoTripManager: AutoTripManager,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -128,6 +131,13 @@ class LiveDashboardViewModel @Inject constructor(
     fun resetManualTrip() {
         manualTripManager.reset()
     }
+
+    /**
+     * Current state of the automatically-detected trip segment, or null if no trip is active.
+     *
+     * Null between engine-off and next engine-on, or when the OBD adapter has never connected.
+     */
+    val autoTripState: StateFlow<AutoTripState?> = autoTripManager.currentTrip
 
     private val _currentAlert = MutableStateFlow<AlertAction?>(null)
 

@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
+import ghart.space.pi_drive.shared.data.db.dao.AutoTripDao
 import ghart.space.pi_drive.shared.data.db.dao.ManualTripDao
+import ghart.space.pi_drive.shared.data.db.entity.AutoTripEntity
 import ghart.space.pi_drive.shared.data.db.entity.DrivingEventEntity
 import ghart.space.pi_drive.shared.data.db.entity.ManualTripEntity
 import ghart.space.pi_drive.shared.data.model.ConnectionState
@@ -15,6 +17,7 @@ import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
+import ghart.space.pi_drive.shared.trip.AutoTripManager
 import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -49,6 +52,24 @@ private fun noOpManualTripManager(scope: CoroutineScope): ManualTripManager {
         override fun getAll(): Flow<List<ManualTripEntity>> = emptyFlow()
     }
     return ManualTripManager(
+        snapshots = MutableStateFlow(VehicleSnapshot.EMPTY),
+        connectionState = MutableStateFlow(ConnectionState.Disconnected()),
+        dao = fakeDao,
+        scope = scope,
+    )
+}
+
+/** Builds a no-op [AutoTripManager] suitable for ViewModel tests that don't test trip behavior. */
+private fun noOpAutoTripManager(scope: CoroutineScope): AutoTripManager {
+    val fakeDao = object : AutoTripDao {
+        override suspend fun insert(trip: AutoTripEntity) = 0L
+        override suspend fun update(trip: AutoTripEntity) {}
+        override suspend fun getActive(): AutoTripEntity? = null
+        override fun getAll() = kotlinx.coroutines.flow.emptyFlow<List<AutoTripEntity>>()
+        override suspend fun getByDateRange(from: java.time.Instant, to: java.time.Instant) = emptyList<AutoTripEntity>()
+        override suspend fun delete(trip: AutoTripEntity) {}
+    }
+    return AutoTripManager(
         snapshots = MutableStateFlow(VehicleSnapshot.EMPTY),
         connectionState = MutableStateFlow(ConnectionState.Disconnected()),
         dao = fakeDao,
@@ -103,6 +124,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
         assertEquals(MetricId.SPEED, viewModel.featuredMetricId)
@@ -120,6 +142,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
         assertEquals("mph", viewModel.featuredUnit)
@@ -139,6 +162,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = handle,
         )
         assertEquals(MetricId.RPM, viewModel.featuredMetricId)
@@ -159,6 +183,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = handle,
         )
         assertEquals(MetricId.SPEED, viewModel.featuredMetricId)
@@ -179,6 +204,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -203,6 +229,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -228,6 +255,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 
@@ -253,6 +281,7 @@ class LiveDashboardViewModelTest {
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
+            autoTripManager = noOpAutoTripManager(backgroundScope),
             savedStateHandle = SavedStateHandle(),
         )
 

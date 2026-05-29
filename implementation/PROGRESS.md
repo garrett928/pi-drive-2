@@ -5,8 +5,8 @@ Last updated: 2026-05-29
 ## Current State
 
 **Active phase:** Phase 6 -- Trips
-**Active step:** 6.3 -- Auto-detected trips
-**Project state:** Phase 6.2 complete. ManualTripManager (Room persistence, pause/resume on connect/disconnect, periodic 10s save, restore from DB on restart), ManualTripState, wired into LiveDashboardViewModel + LiveDashboardScreen MPG row. ManualTripManagerTest (6 tests, UnconfinedTestDispatcher for StateFlow). 318 tests green. Next: AutoTripDetector.
+**Active step:** 7.1 -- Telemetry payload + HTTP uploader
+**Project state:** Phase 6 complete. AutoTripDetector (connection-event-based trip boundaries, 5-min end timeout, TripAccumulator, Room persistence), AutoTripManager (owns detector, exposes currentTrip StateFlow + tripHistory Flow), AutoTripState data class, wired into LiveDashboardViewModel. AutoTripDetectorTest (5 tests). 323 tests green. Next: TelemetryPayload + HTTP uploader.
 
 ## Completed
 
@@ -32,6 +32,7 @@ Last updated: 2026-05-29
 | 5.3 | Alert system + health alerts | AlertManager (accepts Flow<DrivingEvent>+Flow<HealthAlert>, DB logging, per-type cooldown, isSevere), HealthMonitor (5 types, PID auto-disable, per-type cooldown), AlertAction sealed class, AlertOverlay+AlertBanner UI (slideInVertically, 3s auto-dismiss, haptic), LiveDashboardViewModel.currentAlert; AlertManagerTest (6 tests), HealthMonitorTest (8 tests); 284 tests green |
 | 6.1 | Trip accumulator | TripAccumulator (speed→distance/duration integration, pause/resume, maxSpeed, avgSpeed), FuelTracker (fuel rate + MAF paths, currentMpg, tripAverageMpg), TripSummary; TripAccumulatorTest (13 tests), FuelTrackerTest (13 tests); 312 tests green |
 | 6.2 | Manual trip manager | ManualTripManager (Room persistence, pause/resume on connect/disconnect, 10s periodic save, DB restore on restart), ManualTripState, wired into LiveDashboardViewModel + MPG row reset button; ManualTripManagerTest (6 tests, UnconfinedTestDispatcher); 318 tests green |
+| 6.3 | Auto-detected trips | AutoTripDetector (connection-event trip boundaries, 5-min end timeout, TripAccumulator integration, Room persistence), AutoTripManager (thin coordinator + currentTrip/tripHistory flows), AutoTripState; AutoTripDetectorTest (5 tests); wired into LiveDashboardViewModel; 323 tests green |
 
 ## Step Status
 
@@ -63,8 +64,8 @@ Last updated: 2026-05-29
 | 5.3 | Alert system + health alerts | DONE | d1b3f65 |
 | **Phase 6: Trips** |
 | 6.1 | Trip accumulator | DONE | 3387926 |
-| 6.2 | Manual trip manager | DONE | |
-| 6.3 | Auto-detected trips | NOT STARTED | |
+| 6.2 | Manual trip manager | DONE | 59baf57 |
+| 6.3 | Auto-detected trips | DONE | |
 | **Phase 7: Telemetry** |
 | 7.1 | Telemetry payload + HTTP uploader | NOT STARTED | |
 | 7.2 | Offline buffer + WorkManager | NOT STARTED | |

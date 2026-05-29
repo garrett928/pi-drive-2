@@ -17,8 +17,10 @@ import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.DetectionConfig
 import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.detection.HealthMonitor
+import ghart.space.pi_drive.shared.data.db.dao.AutoTripDao
 import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
 import ghart.space.pi_drive.shared.data.db.dao.ManualTripDao
+import ghart.space.pi_drive.shared.trip.AutoTripManager
 import ghart.space.pi_drive.shared.trip.ManualTripManager
 import kotlinx.coroutines.flow.merge
 import ghart.space.pi_drive.shared.obd.BluetoothTransport
@@ -200,6 +202,25 @@ object DataModule {
         dao: ManualTripDao,
         @ApplicationScope scope: CoroutineScope,
     ): ManualTripManager = ManualTripManager(
+        snapshots = dataSource.snapshot,
+        connectionState = dataSource.connectionState,
+        dao = dao,
+        scope = scope,
+    )
+
+    /**
+     * Provides the [AutoTripManager] singleton.
+     *
+     * Feeds snapshots and connection state from the [VehicleDataSource] and persists
+     * trip boundaries to [AutoTripDao]. Trip detection runs for the lifetime of [scope].
+     */
+    @Provides
+    @Singleton
+    fun provideAutoTripManager(
+        dataSource: VehicleDataSource,
+        dao: AutoTripDao,
+        @ApplicationScope scope: CoroutineScope,
+    ): AutoTripManager = AutoTripManager(
         snapshots = dataSource.snapshot,
         connectionState = dataSource.connectionState,
         dao = dao,
