@@ -150,6 +150,7 @@ class DemoVehicleDataSource(
         val rpm      = (2500 + osc(tick, 200.0, 60.0)).roundToInt()
         return VehicleSnapshot(
             speedKmh        = speedKmh,
+            gpsSpeedMps     = speedKmh / 3.6f,
             rpm             = rpm,
             coolantTempC    = (91 + osc(tick, 3.0, 160.0)).roundToInt(),
             intakeAirTempC  = (35 + osc(tick, 5.0, 120.0)).roundToInt(),
@@ -172,6 +173,7 @@ class DemoVehicleDataSource(
         val moving   = speedKmh > 5
         return VehicleSnapshot(
             speedKmh        = speedKmh,
+            gpsSpeedMps     = speedKmh / 3.6f,
             rpm             = rpm,
             coolantTempC    = (90 + osc(tick, 2.0, 160.0)).roundToInt(),
             intakeAirTempC  = (32 + osc(tick, 4.0, 120.0)).roundToInt(),
@@ -192,6 +194,7 @@ class DemoVehicleDataSource(
         val rpm      = (2100 + osc(tick, 150.0, 80.0)).roundToInt()
         return VehicleSnapshot(
             speedKmh        = speedKmh,
+            gpsSpeedMps     = speedKmh / 3.6f,
             rpm             = rpm,
             coolantTempC    = (92 + osc(tick, 2.0, 200.0)).roundToInt(),
             intakeAirTempC  = (38 + osc(tick, 3.0, 160.0)).roundToInt(),
@@ -253,6 +256,7 @@ class DemoVehicleDataSource(
 
         return VehicleSnapshot(
             speedKmh        = speedKmh,
+            gpsSpeedMps     = speedKmh / 3.6f,
             rpm             = (speedKmh * 24 + 750).coerceIn(750, 4000),
             coolantTempC    = 91,
             intakeAirTempC  = 35,
@@ -287,6 +291,7 @@ class DemoVehicleDataSource(
 
         return VehicleSnapshot(
             speedKmh        = speedKmh,
+            gpsSpeedMps     = speedKmh / 3.6f,
             rpm             = rpm,
             coolantTempC    = coolant,
             intakeAirTempC  = (15 + warmupPct * 20).roundToInt(),
@@ -329,8 +334,9 @@ class DemoVehicleDataSource(
 
         val base = buildCruise(tick)
         return base.copy(
-            speedKmh  = speedKmh,
-            rpm       = (speedKmh * 24 + 750).coerceIn(750, 4500),
+            speedKmh    = speedKmh,
+            gpsSpeedMps = speedKmh / 3.6f,
+            rpm         = (speedKmh * 24 + 750).coerceIn(750, 4500),
             throttlePct = if (phase >= burstStart) 80f else base.throttlePct,
         )
     }

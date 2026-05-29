@@ -9,6 +9,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.model.DemoScenario
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
+import ghart.space.pi_drive.shared.detection.AccelerometerManager
+import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 import ghart.space.pi_drive.ui.components.PiDriveScaffold
 import javax.inject.Inject
@@ -35,6 +37,8 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var accelDetector: AccelerationDetector
+    @Inject lateinit var gForceDetector: GForceDetector
+    @Inject lateinit var accelManager: AccelerometerManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
@@ -52,11 +56,17 @@ class MainActivity : ComponentActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        accelManager.start()
         enableEdgeToEdge()
         setContent {
             PiDriveTheme {
                 PiDriveScaffold()
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        accelManager.stop()
     }
 }

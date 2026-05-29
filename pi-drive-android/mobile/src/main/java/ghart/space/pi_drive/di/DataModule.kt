@@ -12,7 +12,9 @@ import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.OBDVehicleDataSource
 import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
+import ghart.space.pi_drive.shared.detection.AccelerometerManager
 import ghart.space.pi_drive.shared.detection.DetectionConfig
+import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.obd.BluetoothTransport
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
@@ -135,6 +137,42 @@ object DataModule {
         val detector = AccelerationDetector(
             snapshots = dataSource.snapshot,
             config = DetectionConfig(),
+        )
+        scope.launch { detector.events().collect { /* AlertManager subscribes in Phase 5.3 */ } }
+        return detector
+    }
+
+    /**
+     * Provides the [AccelerometerManager] singleton.
+     *
+     * The manager is not started here — it is started by [MainActivity] after it injects
+     * it alongside [AccelerationDetector], so that the sensor is registered only when the
+     * app is in the foreground.
+     */
+    @Provides
+    @Singleton
+    fun provideAccelerometerManager(
+        @ApplicationContext context: android.content.Context,
+    ): AccelerometerManager = AccelerometerManager(context)
+
+    /**
+     * Provides the [GForceDetector] and launches its event collection loop.
+     *
+     * [gForceEnabled] is enabled here so that cross-validation logging runs even without
+     * a calibrated accelerometer — on the emulator or an uncalibrated device, only the
+     * OBD and GPS sources vote.  Phase 5.3 will route emitted events through [AlertManager].
+     */
+    @Provides
+    @Singleton
+    fun provideGForceDetector(
+        dataSource: VehicleDataSource,
+        accelManager: AccelerometerManager,
+        @ApplicationScope scope: CoroutineScope,
+    ): GForceDetector {
+        val detector = GForceDetector(
+            snapshots = dataSource.snapshot,
+            accelMps2Flow = accelManager.longitudinalMps2,
+            config = DetectionConfig(gForceEnabled = true),
         )
         scope.launch { detector.events().collect { /* AlertManager subscribes in Phase 5.3 */ } }
         return detector

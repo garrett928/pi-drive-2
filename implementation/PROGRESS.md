@@ -5,8 +5,8 @@ Last updated: 2026-05-28
 ## Current State
 
 **Active phase:** Phase 5 -- Detection
-**Active step:** 5.2 -- G-Force detector (sensor fusion)
-**Project state:** Phase 5.1 complete. AccelerationDetector (OBD-primary/GPS-fallback, mph/s state machine, IDLE→DETECTING→COOLDOWN), DetectionConfig (all thresholds), GForceDetector skeleton. AccelerationDetector injected in MainActivity (after AppConfig is set from intent extras) so correct VehicleDataSource is used. 251 unit tests green. Verified: "Hard brake detected, rate=24.5 mph/s" in HARD_BRAKE demo. Next: G-Force detector with sensor fusion (3-source cross-validation).
+**Active step:** 5.3 -- Alert system + health alerts
+**Project state:** Phase 5.2 complete. GForceDetector (3-source cross-validation: OBD delta, GPS delta, accelerometer), AccelerometerManager (TYPE_LINEAR_ACCELERATION sensor, low-pass filter, calibration persistence), CalibrationManager (axis/variance detection). DemoVehicleDataSource now emits gpsSpeedMps so OBD+GPS cross-validation works in demo. 268 unit tests green. Verified: "Hard brake detected via G-force, peak=1.13g [SEVERE], sources=[OBD, GPS]" in HARD_BRAKE demo. Next: AlertManager + HealthMonitor + AlertOverlay UI.
 
 ## Completed
 
@@ -28,6 +28,7 @@ Last updated: 2026-05-28
 | 4.2 | Connect Screen UI | ConnectScanScreen + ConnectPairScreen + ConnectDoneScreen; ConnectCoordinator (pure Kotlin, 6-step state machine); ConnectViewModel (HiltVM, scoped to nested CONNECT_GRAPH for shared state); 5 coordinator tests; screenshots in screenshots/ |
 | 4.3 | Auto-reconnect + connection manager | ConnectionManager (5-min retry window, injectable clock, backgroundScope-safe); AdapterWatcher (BroadcastReceiver ACL_DISCONNECTED); ConnectionState.Disconnected(canRetry, retryIn); ConnectionBanner reconnecting row with countdown; 236 tests green |
 | 5.1 | Acceleration detector (mph/s) | DetectionConfig; AccelerationDetector (OBD-primary/GPS-fallback, IDLE→DETECTING→COOLDOWN state machine, peak-rate tracking); AccelerationDetectorTest (9 tests); injected in MainActivity after AppConfig set; 251 tests green; verified: "Hard brake detected, rate=24.5 mph/s" in HARD_BRAKE demo |
+| 5.2 | G-Force detector (sensor fusion) | GForceDetector (≥2/3 source cross-validation: OBD+GPS+accel), AccelerometerManager (TYPE_LINEAR_ACCELERATION, low-pass filter α=0.8, SharedPrefs calibration), CalibrationManager (axis/variance selection); GForceDetectorTest (7 tests), AccelerometerManagerTest (10 tests); DemoVehicleDataSource updated to emit gpsSpeedMps; 268 tests green; verified: "Hard brake detected via G-force, peak=1.13g [SEVERE], sources=[OBD, GPS]" |
 
 ## Step Status
 
@@ -55,7 +56,7 @@ Last updated: 2026-05-28
 | 4.3 | Auto-reconnect + connection manager | DONE | |
 | **Phase 5: Detection** |
 | 5.1 | Acceleration detector (mph/s) | DONE | |
-| 5.2 | G-Force detector (sensor fusion) | NOT STARTED | |
+| 5.2 | G-Force detector (sensor fusion) | DONE | |
 | 5.3 | Alert system + health alerts | NOT STARTED | |
 | **Phase 6: Trips** |
 | 6.1 | Trip accumulator | NOT STARTED | |
