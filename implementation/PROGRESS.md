@@ -1,12 +1,12 @@
 # Pi Drive -- Implementation Progress
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 ## Current State
 
 **Active phase:** Phase 4 -- Bluetooth
-**Active step:** 4.2 -- Connect Screen UI (3-step flow)
-**Project state:** BluetoothTransport + TcpTransport + ResponseFramer complete (Step 4.1 done). ResponseFramer reads until `>` prompt, strips CR/LF, handles SocketTimeoutException → OBDTimeoutException. BluetoothTransport uses RFCOMM SPP UUID + runInterruptible timeout. TcpTransport uses soTimeout for ELM327 emulator. OBDTimeoutException domain exception. 231 unit tests green. Next: 3-step connect flow UI.
+**Active step:** 4.3 -- Auto-reconnect + connection manager
+**Project state:** Connect flow UI complete (Step 4.2 done). ConnectScanScreen (BT device list + pulsing animation), ConnectPairScreen (6-step init checklist + progress bar), ConnectDoneScreen (vehicle info card). ConnectCoordinator (pure Kotlin, testable), ConnectViewModel (Hilt, scoped to CONNECT_GRAPH nested nav for shared state). 5 new ConnectCoordinator tests. 231 unit tests green. Fixed nested nav graph sharing so all 3 screens use one ViewModel instance. Next: auto-reconnect + ConnectionManager.
 
 ## Completed
 
@@ -25,6 +25,7 @@ Last updated: 2026-05-27
 | 3.2 | MPG row + tile grid | MpgRow (instant/trip/manual, Reset pill), DialWidget (270° arc), BarWidget (directional warning), NumberWidget, XYWidget (crosshair), MetricTile/TileGrid (2-col 6-tile grid), scrollable layout, ViewModel.currentSnapshot; 223 tests green |
 | 3.3 | Connection banner + status bar | ConnectionBanner (Connected/Disconnected/Connecting/Error variants, spinning BT icon animation), StatusBanner (LIVE/RECORDING/CONNECTING/ERROR/IDLE), connectionState StateFlow in ViewModel, banners wired in LiveDashboardScreen; 223 tests green |
 | 4.1 | BluetoothTransport | ResponseFramer (read-until-prompt, SocketTimeoutException → OBDTimeoutException), BluetoothTransport (RFCOMM SPP, runInterruptible timeout), TcpTransport (soTimeout, ELM327 emulator), OBDTimeoutException domain type; 231 tests green |
+| 4.2 | Connect Screen UI | ConnectScanScreen + ConnectPairScreen + ConnectDoneScreen; ConnectCoordinator (pure Kotlin, 6-step state machine); ConnectViewModel (HiltVM, scoped to nested CONNECT_GRAPH for shared state); 5 coordinator tests; screenshots in screenshots/ |
 
 ## Step Status
 
@@ -48,7 +49,7 @@ Last updated: 2026-05-27
 | 3.3 | Connection banner + status bar | DONE | |
 | **Phase 4: Bluetooth** |
 | 4.1 | BluetoothTransport | DONE | |
-| 4.2 | Connect screen UI (3-step flow) | NOT STARTED | |
+| 4.2 | Connect screen UI (3-step flow) | DONE | |
 | 4.3 | Auto-reconnect + connection manager | NOT STARTED | |
 | **Phase 5: Detection** |
 | 5.1 | Acceleration detector (mph/s) | NOT STARTED | |

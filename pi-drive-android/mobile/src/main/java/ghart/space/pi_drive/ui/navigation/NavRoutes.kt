@@ -19,6 +19,9 @@ object NavRoutes {
     const val SETTINGS = "settings"
 
     // ── Connect flow (no bottom nav) ──────────────────────────────────────
+    /** Parent nested graph route — used to scope the shared ConnectViewModel. */
+    const val CONNECT_GRAPH = "connect"
+
     /** Step 1 — Bluetooth scan + device list. */
     const val CONNECT_SCAN = "connect/scan"
 

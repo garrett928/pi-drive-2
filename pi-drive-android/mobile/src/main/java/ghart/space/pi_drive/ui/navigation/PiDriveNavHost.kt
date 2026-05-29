@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import ghart.space.pi_drive.ui.screens.LiveDashboardScreen
 import ghart.space.pi_drive.ui.screens.SettingsScreen
 import ghart.space.pi_drive.ui.screens.TripHistoryScreen
@@ -40,10 +41,15 @@ fun PiDriveNavHost(
         composable(NavRoutes.TRIPS)    { TripHistoryScreen(navController) }
         composable(NavRoutes.SETTINGS) { SettingsScreen(navController) }
 
-        // ── Connect flow (full-screen, no bottom nav) ─────────────────────
-        composable(NavRoutes.CONNECT_SCAN) { ConnectScanScreen(navController) }
-        composable(NavRoutes.CONNECT_PAIR) { ConnectPairScreen(navController) }
-        composable(NavRoutes.CONNECT_DONE) { ConnectDoneScreen(navController) }
+        // ── Connect flow (nested graph so all three screens share one ConnectViewModel) ──
+        navigation(
+            route = NavRoutes.CONNECT_GRAPH,
+            startDestination = NavRoutes.CONNECT_SCAN,
+        ) {
+            composable(NavRoutes.CONNECT_SCAN) { ConnectScanScreen(navController) }
+            composable(NavRoutes.CONNECT_PAIR) { ConnectPairScreen(navController) }
+            composable(NavRoutes.CONNECT_DONE) { ConnectDoneScreen(navController) }
+        }
 
         // ── Settings sub-screens ──────────────────────────────────────────
         composable(NavRoutes.SETTINGS_SERVER)      { SettingsServerScreen(navController) }
