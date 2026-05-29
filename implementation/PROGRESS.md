@@ -5,8 +5,8 @@ Last updated: 2026-05-29
 ## Current State
 
 **Active phase:** Phase 6 -- Trips
-**Active step:** 6.1 -- Trip accumulator
-**Project state:** Phase 5 complete. AlertManager (accepts merged Flow<DrivingEvent> + Flow<HealthAlert>, DB logging, per-type cooldown), HealthMonitor (5 alert types: coolant/fuel/RPM/speed/battery, PID auto-disable, per-type cooldown), AlertOverlay UI (slideInVertically + fadeIn, 3s auto-dismiss, haptic feedback), LiveDashboardViewModel.currentAlert + dismissAlert. 284 unit tests green. Next: TripAccumulator.
+**Active step:** 6.2 -- Manual trip manager
+**Project state:** Phase 6.1 complete. TripAccumulator (speed→distance/duration integration, pause/resume, maxSpeed, avgSpeed), FuelTracker (fuel rate + MAF integration paths, currentMpg, tripAverageMpg), TripSummary data class. TripAccumulatorTest (13 tests), FuelTrackerTest (13 tests). 312 tests green. Next: ManualTripManager.
 
 ## Completed
 
@@ -30,6 +30,7 @@ Last updated: 2026-05-29
 | 5.1 | Acceleration detector (mph/s) | DetectionConfig; AccelerationDetector (OBD-primary/GPS-fallback, IDLE→DETECTING→COOLDOWN state machine, peak-rate tracking); AccelerationDetectorTest (9 tests); injected in MainActivity after AppConfig set; 251 tests green; verified: "Hard brake detected, rate=24.5 mph/s" in HARD_BRAKE demo |
 | 5.2 | G-Force detector (sensor fusion) | GForceDetector (≥2/3 source cross-validation: OBD+GPS+accel), AccelerometerManager (TYPE_LINEAR_ACCELERATION, low-pass filter α=0.8, SharedPrefs calibration), CalibrationManager (axis/variance selection); GForceDetectorTest (7 tests), AccelerometerManagerTest (10 tests); DemoVehicleDataSource updated to emit gpsSpeedMps; 268 tests green; verified: "Hard brake detected via G-force, peak=1.13g [SEVERE], sources=[OBD, GPS]" |
 | 5.3 | Alert system + health alerts | AlertManager (accepts Flow<DrivingEvent>+Flow<HealthAlert>, DB logging, per-type cooldown, isSevere), HealthMonitor (5 types, PID auto-disable, per-type cooldown), AlertAction sealed class, AlertOverlay+AlertBanner UI (slideInVertically, 3s auto-dismiss, haptic), LiveDashboardViewModel.currentAlert; AlertManagerTest (6 tests), HealthMonitorTest (8 tests); 284 tests green |
+| 6.1 | Trip accumulator | TripAccumulator (speed→distance/duration integration, pause/resume, maxSpeed, avgSpeed), FuelTracker (fuel rate + MAF paths, currentMpg, tripAverageMpg), TripSummary; TripAccumulatorTest (13 tests), FuelTrackerTest (13 tests); 312 tests green |
 
 ## Step Status
 
@@ -58,9 +59,9 @@ Last updated: 2026-05-29
 | **Phase 5: Detection** |
 | 5.1 | Acceleration detector (mph/s) | DONE | |
 | 5.2 | G-Force detector (sensor fusion) | DONE | 35e5af9 |
-| 5.3 | Alert system + health alerts | DONE | |
+| 5.3 | Alert system + health alerts | DONE | d1b3f65 |
 | **Phase 6: Trips** |
-| 6.1 | Trip accumulator | NOT STARTED | |
+| 6.1 | Trip accumulator | DONE | |
 | 6.2 | Manual trip manager | NOT STARTED | |
 | 6.3 | Auto-detected trips | NOT STARTED | |
 | **Phase 7: Telemetry** |
