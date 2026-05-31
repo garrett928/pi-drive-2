@@ -14,7 +14,6 @@ import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
 import ghart.space.pi_drive.shared.detection.AccelerometerManager
 import ghart.space.pi_drive.shared.detection.AlertManager
-import ghart.space.pi_drive.shared.detection.DetectionConfig
 import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.detection.HealthMonitor
 import ghart.space.pi_drive.shared.data.db.dao.AutoTripDao
@@ -30,6 +29,7 @@ import ghart.space.pi_drive.shared.obd.TcpTransport
 import ghart.space.pi_drive.shared.data.db.dao.PendingUploadDao
 import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
+import ghart.space.pi_drive.shared.settings.ThresholdsManager
 import ghart.space.pi_drive.shared.telemetry.OfflineBuffer
 import ghart.space.pi_drive.shared.telemetry.TelemetryConfigRepository
 import ghart.space.pi_drive.shared.telemetry.UploadWorker
@@ -137,16 +137,18 @@ object DataModule {
     /**
      * Provides the [AccelerationDetector] that watches the live snapshot stream.
      *
-     * Event collection is managed by [AlertManager], which merges both detector flows
-     * and routes events to the DB and UI.
+     * Receives the reactive [ThresholdsManager.detectionConfig] flow so that threshold
+     * changes in the UI take effect immediately without restarting the detector.
+     * Event collection is managed by [AlertManager].
      */
     @Provides
     @Singleton
     fun provideAccelerationDetector(
         dataSource: VehicleDataSource,
+        thresholdsManager: ThresholdsManager,
     ): AccelerationDetector = AccelerationDetector(
         snapshots = dataSource.snapshot,
-        config = DetectionConfig(),
+        configFlow = thresholdsManager.detectionConfig,
     )
 
     /**
@@ -164,8 +166,8 @@ object DataModule {
     /**
      * Provides the [GForceDetector].
      *
-     * [gForceEnabled] is true so cross-validation logging runs even on the emulator
-     * (where the physical accelerometer is unavailable) using only OBD and GPS sources.
+     * Receives the reactive [ThresholdsManager.detectionConfig] flow so that threshold
+     * changes in the UI take effect immediately without restarting the detector.
      * Event collection is managed by [AlertManager].
      */
     @Provides
@@ -173,25 +175,29 @@ object DataModule {
     fun provideGForceDetector(
         dataSource: VehicleDataSource,
         accelManager: AccelerometerManager,
+        thresholdsManager: ThresholdsManager,
     ): GForceDetector = GForceDetector(
         snapshots = dataSource.snapshot,
         accelMps2Flow = accelManager.longitudinalMps2,
-        config = DetectionConfig(gForceEnabled = true),
+        configFlow = thresholdsManager.detectionConfig,
     )
 
     /**
      * Provides the [HealthMonitor] that watches live snapshots for vehicle health thresholds.
      *
-     * Uses the data source's supported-PID set to auto-skip checks for metrics the vehicle
-     * does not expose.
+     * Receives the reactive [ThresholdsManager.healthMonitorConfig] flow so that threshold
+     * changes in the UI take effect immediately. Uses the data source's supported-PID set
+     * to auto-skip checks for metrics the vehicle does not expose.
      */
     @Provides
     @Singleton
     fun provideHealthMonitor(
         dataSource: VehicleDataSource,
+        thresholdsManager: ThresholdsManager,
     ): HealthMonitor = HealthMonitor(
         snapshots = dataSource.snapshot,
         supportedPids = dataSource.supportedPids,
+        configFlow = thresholdsManager.healthMonitorConfig,
     )
 
     /**
@@ -244,6 +250,19 @@ object DataModule {
     fun provideGeneralSettingsManager(@ApplicationContext context: Context): GeneralSettingsManager =
         GeneralSettingsManager(
             context.getSharedPreferences(GeneralSettingsManager.PREFS_NAME, Context.MODE_PRIVATE)
+        )
+
+    /**
+     * Provides the [ThresholdsManager] that persists detection thresholds and health alert settings.
+     *
+     * Stored in its own SharedPreferences file so threshold changes don't interfere with
+     * general or layout settings. All three detectors consume the reactive flows it exposes.
+     */
+    @Provides
+    @Singleton
+    fun provideThresholdsManager(@ApplicationContext context: Context): ThresholdsManager =
+        ThresholdsManager(
+            context.getSharedPreferences(ThresholdsManager.PREFS_NAME, Context.MODE_PRIVATE)
         )
 
     /**

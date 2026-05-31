@@ -89,7 +89,7 @@ class GForceDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 60_000,
         )
-        val detector = GForceDetector(snapFlow, accelFlow, config)
+        val detector = GForceDetector(snapFlow, accelFlow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -128,7 +128,7 @@ class GForceDetectorTest {
             cooldownMs = 60_000,
         )
         // No accelerometer channel (accelMps2Flow = null)
-        val detector = GForceDetector(snapFlow, accelMps2Flow = null, config = config)
+        val detector = GForceDetector(snapFlow, accelMps2Flow = null, configFlow = MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -161,7 +161,7 @@ class GForceDetectorTest {
             gForceHardBrakeThreshold = 0.265f,
             minEventDurationMs = 400,
         )
-        val detector = GForceDetector(snapFlow, accelMps2Flow = null, config = config)
+        val detector = GForceDetector(snapFlow, accelMps2Flow = null, configFlow = MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -196,7 +196,7 @@ class GForceDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 60_000,
         )
-        val detector = GForceDetector(snapFlow, accelFlow, config)
+        val detector = GForceDetector(snapFlow, accelFlow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -231,7 +231,7 @@ class GForceDetectorTest {
             gForceHardBrakeThreshold = 0.265f,
             minEventDurationMs = 400,
         )
-        val detector = GForceDetector(snapFlow, accelFlow, config)
+        val detector = GForceDetector(snapFlow, accelFlow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -270,7 +270,7 @@ class GForceDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 60_000,
         )
-        val detector = GForceDetector(snapFlow, accelMps2Flow = null, config = config)
+        val detector = GForceDetector(snapFlow, accelMps2Flow = null, configFlow = MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -300,7 +300,7 @@ class GForceDetectorTest {
     fun `disabled detector emits no events`() = runTest(dispatcher) {
         val snapFlow = MutableStateFlow(VehicleSnapshot.EMPTY)
         val config = DetectionConfig(gForceEnabled = false)
-        val detector = GForceDetector(snapFlow, config = config)
+        val detector = GForceDetector(snapFlow, configFlow = MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 

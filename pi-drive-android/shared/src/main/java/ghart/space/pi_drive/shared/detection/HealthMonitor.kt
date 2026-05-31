@@ -5,8 +5,10 @@ import ghart.space.pi_drive.shared.data.model.AlertAction
 import ghart.space.pi_drive.shared.data.model.HealthAlertType
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.Serializable
 
 /**
  * Monitors live vehicle snapshots and emits [AlertAction.HealthAlert] when configurable
@@ -31,13 +33,14 @@ import kotlinx.coroutines.flow.flow
  *
  * @param snapshots     Live vehicle data stream.
  * @param supportedPids Current vehicle's supported PIDs (from OBD initialization).
- * @param config        Threshold and enable settings.
+ * @param configFlow    Reactive threshold and enable settings; re-read on each snapshot
+ *                      so user changes take effect immediately.
  * @param clock         Returns the current epoch milliseconds. Overridable for testing.
  */
 class HealthMonitor(
     private val snapshots: StateFlow<VehicleSnapshot>,
     private val supportedPids: StateFlow<Set<Int>>,
-    private val config: HealthMonitorConfig = HealthMonitorConfig(),
+    private val configFlow: StateFlow<HealthMonitorConfig> = MutableStateFlow(HealthMonitorConfig()),
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
 
@@ -62,19 +65,13 @@ class HealthMonitor(
         val lastFire = mutableMapOf<HealthAlertType, Long>()
 
         snapshots.collect { snap ->
+            val config = configFlow.value   // re-read on each tick so user changes apply immediately
             val pids = supportedPids.value
             val now = clock()
 
             fun shouldFire(type: HealthAlertType, cooldown: Long): Boolean {
-                val last = lastFire[type] ?: return true  // never fired → always allow
+                val last = lastFire[type] ?: return true
                 return now - last >= cooldown
-            }
-
-            fun tryEmit(type: HealthAlertType, cooldown: Long, value: Float, msg: String) {
-                if (shouldFire(type, cooldown)) {
-                    lastFire[type] = now
-                    Log.i(TAG, "Health alert: $msg")
-                }
             }
 
             // High coolant
@@ -116,7 +113,7 @@ class HealthMonitor(
                 }
             }
 
-            // Overspeed (disabled by default)
+            // Overspeed
             if (config.overspeedEnabled && pids.contains(PID_SPEED)) {
                 val speedMph = snap.speedKmh?.times(0.621371f)
                 if (speedMph != null && speedMph >= config.overspeedThresholdMph) {
@@ -129,7 +126,7 @@ class HealthMonitor(
                 }
             }
 
-            // Low battery (disabled by default)
+            // Low battery
             if (config.lowBatteryEnabled && pids.contains(PID_BATTERY)) {
                 val volts = snap.batteryVoltage
                 if (volts != null && volts <= config.lowBatteryThresholdV) {
@@ -151,6 +148,7 @@ class HealthMonitor(
  * Defaults reflect common safe thresholds. Overspeed and low-battery alerts are disabled
  * by default as they depend on local preferences and vehicle type.
  */
+@Serializable
 data class HealthMonitorConfig(
     val highCoolantEnabled: Boolean = true,
     val highCoolantThresholdC: Float = 110f,

@@ -8,6 +8,7 @@ import ghart.space.pi_drive.shared.data.model.EventType
 import ghart.space.pi_drive.shared.data.model.LatLng
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import java.time.Duration
@@ -48,7 +49,7 @@ import kotlin.math.abs
 class GForceDetector(
     private val snapshots: StateFlow<VehicleSnapshot>,
     private val accelMps2Flow: StateFlow<Float?>? = null,
-    private val config: DetectionConfig = DetectionConfig(),
+    private val configFlow: StateFlow<DetectionConfig> = MutableStateFlow(DetectionConfig()),
 ) {
 
     companion object {
@@ -64,7 +65,7 @@ class GForceDetector(
      * rule confirms a hard-acceleration or hard-braking event.
      */
     fun events(): Flow<DrivingEvent> = flow {
-        if (!config.gForceEnabled) return@flow
+        if (!configFlow.value.gForceEnabled) return@flow
 
         var prevSnapshot: VehicleSnapshot? = null
 
@@ -76,6 +77,7 @@ class GForceDetector(
         var cooldownStart = Instant.EPOCH
 
         snapshots.collect { snap ->
+            val config = configFlow.value   // re-read on each tick so user changes apply immediately
             val now = snap.timestamp
             val prev = prevSnapshot
             prevSnapshot = snap

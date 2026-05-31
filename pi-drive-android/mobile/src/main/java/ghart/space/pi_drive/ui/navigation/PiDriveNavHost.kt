@@ -55,6 +55,6 @@ fun PiDriveNavHost(
         composable(NavRoutes.SETTINGS_SERVER)      { SettingsServerScreen(navController) }
         composable(NavRoutes.SETTINGS_HOME_LAYOUT) { SettingsHomeLayoutScreen() }
         composable(NavRoutes.SETTINGS_AA_LAYOUT)   { SettingsAALayoutScreen(navController) }
-        composable(NavRoutes.SETTINGS_THRESHOLDS)  { SettingsThresholdsScreen(navController) }
+        composable(NavRoutes.SETTINGS_THRESHOLDS)  { SettingsThresholdsScreen() }
     }
 }

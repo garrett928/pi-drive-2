@@ -78,7 +78,7 @@ class AccelerationDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 60_000,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
 
         val job = launch { detector.events().collect { events.add(it) } }
@@ -114,7 +114,7 @@ class AccelerationDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 60_000,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -148,7 +148,7 @@ class AccelerationDetectorTest {
             accelHardBrakeThreshold = 6.5f,
             minEventDurationMs = 400,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -179,7 +179,7 @@ class AccelerationDetectorTest {
             accelHardBrakeThreshold = 6.5f,
             minEventDurationMs = 500,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -208,7 +208,7 @@ class AccelerationDetectorTest {
             minEventDurationMs = 500,
             cooldownMs = 60_000,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -270,7 +270,7 @@ class AccelerationDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 60_000,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -313,7 +313,7 @@ class AccelerationDetectorTest {
             minEventDurationMs = 400,
             cooldownMs = 3_000,
         )
-        val detector = AccelerationDetector(flow, config)
+        val detector = AccelerationDetector(flow, MutableStateFlow(config))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 
@@ -356,7 +356,7 @@ class AccelerationDetectorTest {
     @Test
     fun `disabled detector emits no events`() = runTest(dispatcher) {
         val flow = MutableStateFlow(VehicleSnapshot.EMPTY)
-        val detector = AccelerationDetector(flow, DetectionConfig(accelEnabled = false))
+        val detector = AccelerationDetector(flow, MutableStateFlow(DetectionConfig(accelEnabled = false)))
         val events = mutableListOf<ghart.space.pi_drive.shared.data.model.DrivingEvent>()
         val job = launch { detector.events().collect { events.add(it) } }
 

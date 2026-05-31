@@ -35,7 +35,7 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(highCoolantEnabled = true, highCoolantThresholdC = 110f),
+            configFlow = MutableStateFlow(HealthMonitorConfig(highCoolantEnabled = true, highCoolantThresholdC = 110f)),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()
@@ -56,7 +56,7 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(highCoolantEnabled = true, highCoolantThresholdC = 110f),
+            configFlow = MutableStateFlow(HealthMonitorConfig(highCoolantEnabled = true, highCoolantThresholdC = 110f)),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()
@@ -85,11 +85,11 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(
+            configFlow = MutableStateFlow(HealthMonitorConfig(
                 highCoolantEnabled = true,
                 highCoolantThresholdC = 110f,
                 highCoolantCooldownMs = 60_000L,
-            ),
+            )),
             clock = { currentTime },
         )
 
@@ -121,11 +121,11 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(
+            configFlow = MutableStateFlow(HealthMonitorConfig(
                 highCoolantEnabled = true,
                 highCoolantThresholdC = 110f,
                 highCoolantCooldownMs = 60_000L,
-            ),
+            )),
             clock = { currentTime },
         )
 
@@ -154,7 +154,7 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(lowFuelEnabled = true, lowFuelThresholdPct = 10f),
+            configFlow = MutableStateFlow(HealthMonitorConfig(lowFuelEnabled = true, lowFuelThresholdPct = 10f)),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()
@@ -175,7 +175,7 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(lowFuelEnabled = true, lowFuelThresholdPct = 10f),
+            configFlow = MutableStateFlow(HealthMonitorConfig(lowFuelEnabled = true, lowFuelThresholdPct = 10f)),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()
@@ -201,7 +201,7 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = noPids,
-            config = HealthMonitorConfig(highCoolantEnabled = true, highCoolantThresholdC = 110f),
+            configFlow = MutableStateFlow(HealthMonitorConfig(highCoolantEnabled = true, highCoolantThresholdC = 110f)),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()
@@ -222,7 +222,7 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(highCoolantEnabled = false),
+            configFlow = MutableStateFlow(HealthMonitorConfig(highCoolantEnabled = false)),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()
@@ -269,12 +269,12 @@ class HealthMonitorTest {
         val monitor = HealthMonitor(
             snapshots = snapshots,
             supportedPids = allPids,
-            config = HealthMonitorConfig(
+            configFlow = MutableStateFlow(HealthMonitorConfig(
                 highCoolantEnabled = true,
                 highCoolantThresholdC = 110f,
                 lowFuelEnabled = true,
                 lowFuelThresholdPct = 10f,
-            ),
+            )),
         )
 
         val alerts = mutableListOf<AlertAction.HealthAlert>()

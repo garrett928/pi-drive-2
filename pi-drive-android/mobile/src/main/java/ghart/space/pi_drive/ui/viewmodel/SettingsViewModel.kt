@@ -11,6 +11,7 @@ import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
 import ghart.space.pi_drive.shared.settings.DashboardTileConfig
 import ghart.space.pi_drive.shared.settings.GeneralSettings
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
+import ghart.space.pi_drive.shared.settings.ThresholdsManager
 import ghart.space.pi_drive.shared.telemetry.TelemetryConfig
 import ghart.space.pi_drive.shared.telemetry.TelemetryConfigRepository
 import ghart.space.pi_drive.shared.trip.ManualTripManager
@@ -31,6 +32,7 @@ import javax.inject.Inject
  * @param dashboardLayoutManager  Persists the phone dashboard tile layout and featured metric.
  * @param telemetryConfigRepository Persists server / signal configuration.
  * @param manualTripManager       Provides and resets the manual trip accumulator.
+ * @param thresholdsManager       Persists detection thresholds; reset on "Reset all settings".
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -39,6 +41,7 @@ class SettingsViewModel @Inject constructor(
     private val dashboardLayoutManager: DashboardLayoutManager,
     private val telemetryConfigRepository: TelemetryConfigRepository,
     private val manualTripManager: ManualTripManager,
+    private val thresholdsManager: ThresholdsManager,
 ) : ViewModel() {
 
     /** Current OBD adapter connection state — drives the vehicle card. */
@@ -77,11 +80,16 @@ class SettingsViewModel @Inject constructor(
     fun resetManualTrip() = manualTripManager.reset()
 
     /**
-     * Clears all general settings preferences and resets them to [GeneralSettings] defaults.
+     * Clears all general settings, dashboard layout, and detection thresholds, restoring
+     * everything to class-default values.
      *
      * Called when the user confirms "Reset all settings" from the danger row.
      */
-    fun resetAllSettings() = generalSettingsManager.reset()
+    fun resetAllSettings() {
+        generalSettingsManager.reset()
+        dashboardLayoutManager.reset()
+        thresholdsManager.reset()
+    }
 
     /** Persists [metricId] as the new featured metric on the phone dashboard. */
     fun setFeaturedMetric(metricId: MetricId) = dashboardLayoutManager.updateFeaturedMetric(metricId)

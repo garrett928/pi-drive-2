@@ -1,12 +1,12 @@
 # Pi Drive -- Implementation Progress
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 
 ## Current State
 
 **Active phase:** Phase 8 -- Settings
-**Active step:** 8.3 -- Thresholds screen
-**Project state:** Steps 8.1+8.2 complete. GeneralSettings/GeneralSettingsManager, SettingsScreen, DashboardLayout/DashboardLayoutManager (SharedPrefs StateFlow, JSON serialization), SettingsHomeLayoutScreen (featured metric chip grid + tile editor with add/remove/reorder/edit-widget-type), WidgetType moved to shared module, DashboardTileConfig used end-to-end, LiveDashboardViewModel migrated from SavedStateHandle to DashboardLayoutManager. 398 tests green. Next: Thresholds screen.
+**Active step:** 8.4 -- Trip history screen + CSV export
+**Project state:** Steps 8.1-8.3 complete. ThresholdsManager (SharedPrefs JSON, dual StateFlow for DetectionConfig+HealthMonitorConfig), ThresholdsViewModel (event count badges, accelerometer calibration state), SettingsThresholdsScreen (Acceleration card with mph/s sliders, G-Force card with calibration warning, Speed & RPM, When Triggered, Vehicle Health sections), all detectors now receive reactive configFlow from ThresholdsManager via Hilt. DetectionConfig + HealthMonitorConfig marked @Serializable. AccelerationDetector/GForceDetector/HealthMonitor constructors updated to StateFlow<Config>. 408 tests green. Next: Trip history screen + CSV export.
 
 ## Completed
 
@@ -38,6 +38,7 @@ Last updated: 2026-05-30
 | 7.3 | Server settings screen | TelemetryServerViewModel (VinState, HealthState, saveVin/saveConfig/testConnection/fetchLastSyncTime), SettingsServerScreen (VIN warning banner, vehicle/endpoint/health/streaming/sample-rate/signal-selection sections), SettingsScreen stub updated; 14 new tests, 383 total green |
 | 8.1 | Settings root + general settings | GeneralSettings + GeneralSettingsManager (SharedPrefs, StateFlow), AutoTripDao.deleteOlderThan, SettingsViewModel, SettingsRootScreen (vehicle card, Appearance/Data&Display/Cloud&Server/DrivingAlerts/App sections), theme+accent wired reactively in MainActivity, data retention job; 7 new tests, 390 total green |
 | 8.2 | Phone home layout editor | DashboardLayout/DashboardLayoutManager (SharedPrefs JSON, StateFlow), SettingsHomeLayoutScreen (featured metric chips + tile grid editor with add/remove/reorder/change-widget-type), WidgetType moved to shared, LiveDashboardViewModel migrated to DashboardLayoutManager; 8 new tests, 398 total green |
+| 8.3 | Thresholds screen | ThresholdsManager (SharedPrefs JSON, DetectionConfig+HealthMonitorConfig StateFlows), ThresholdsViewModel (event count badges, accel calibration), SettingsThresholdsScreen (Acceleration/G-Force/Speed&RPM/WhenTriggered/VehicleHealth sections), all detectors wired to ThresholdsManager via Hilt; detectors/tests updated to StateFlow<Config>; 10 new tests, 408 total green |
 
 ## Step Status
 
@@ -78,7 +79,7 @@ Last updated: 2026-05-30
 | **Phase 8: Settings** |
 | 8.1 | Settings root + general settings | DONE | |
 | 8.2 | Phone home layout editor | DONE | |
-| 8.3 | Thresholds screen | NOT STARTED | |
+| 8.3 | Thresholds screen | DONE | |
 | 8.4 | Trip history screen + CSV export | NOT STARTED | |
 | **Phase 9: Android Auto** |
 | 9.1 | AA Screen 1 -- Dials | NOT STARTED | |
