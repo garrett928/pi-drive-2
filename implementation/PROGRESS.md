@@ -4,9 +4,9 @@ Last updated: 2026-05-31
 
 ## Current State
 
-**Active phase:** Phase 8 -- Settings
-**Active step:** 8.4 -- Trip history screen + CSV export
-**Project state:** Steps 8.1-8.3 complete. ThresholdsManager (SharedPrefs JSON, dual StateFlow for DetectionConfig+HealthMonitorConfig), ThresholdsViewModel (event count badges, accelerometer calibration state), SettingsThresholdsScreen (Acceleration card with mph/s sliders, G-Force card with calibration warning, Speed & RPM, When Triggered, Vehicle Health sections), all detectors now receive reactive configFlow from ThresholdsManager via Hilt. DetectionConfig + HealthMonitorConfig marked @Serializable. AccelerationDetector/GForceDetector/HealthMonitor constructors updated to StateFlow<Config>. 408 tests green. Next: Trip history screen + CSV export.
+**Active phase:** Phase 9 -- Android Auto
+**Active step:** 9.1 -- AA Screen 1 -- Dials
+**Project state:** Phase 8 complete. TripHistoryScreen (weekly summary card, day-grouped sticky LazyColumn, LIVE/QUEUED/SYNCED pills, empty state), TripHistoryViewModel (7-day summary, groupByDay), TripDetailScreen (full stats, event list, Export CSV button), TripDetailViewModel (SavedStateHandle tripId, Long navArg fix), CsvExporter (pure toCsv() + FileProvider share intent), FileProvider + file_paths.xml. 425 tests green. All phone screens implemented. Next: Android Auto dials screen.
 
 ## Completed
 
@@ -39,6 +39,7 @@ Last updated: 2026-05-31
 | 8.1 | Settings root + general settings | GeneralSettings + GeneralSettingsManager (SharedPrefs, StateFlow), AutoTripDao.deleteOlderThan, SettingsViewModel, SettingsRootScreen (vehicle card, Appearance/Data&Display/Cloud&Server/DrivingAlerts/App sections), theme+accent wired reactively in MainActivity, data retention job; 7 new tests, 390 total green |
 | 8.2 | Phone home layout editor | DashboardLayout/DashboardLayoutManager (SharedPrefs JSON, StateFlow), SettingsHomeLayoutScreen (featured metric chips + tile grid editor with add/remove/reorder/change-widget-type), WidgetType moved to shared, LiveDashboardViewModel migrated to DashboardLayoutManager; 8 new tests, 398 total green |
 | 8.3 | Thresholds screen | ThresholdsManager (SharedPrefs JSON, DetectionConfig+HealthMonitorConfig StateFlows), ThresholdsViewModel (event count badges, accel calibration), SettingsThresholdsScreen (Acceleration/G-Force/Speed&RPM/WhenTriggered/VehicleHealth sections), all detectors wired to ThresholdsManager via Hilt; detectors/tests updated to StateFlow<Config>; 10 new tests, 408 total green |
+| 8.4 | Trip history screen + CSV export | TripHistoryScreen (weekly summary card, day-grouped sticky LazyColumn, LIVE/QUEUED/SYNCED pills, empty state), TripHistoryViewModel (7-day summary, groupByDay reactive), TripDetailScreen (stats, event list, Export CSV button), TripDetailViewModel (SavedStateHandle tripId; fixed LongType navArg crash), CsvExporter (pure toCsv() + FileProvider share intent), FileProvider + file_paths.xml; test date-grouping fixed to use Int daysAgo; 17 new tests, 425 total green |
 
 ## Step Status
 
@@ -79,8 +80,8 @@ Last updated: 2026-05-31
 | **Phase 8: Settings** |
 | 8.1 | Settings root + general settings | DONE | |
 | 8.2 | Phone home layout editor | DONE | |
-| 8.3 | Thresholds screen | DONE | |
-| 8.4 | Trip history screen + CSV export | NOT STARTED | |
+| 8.3 | Thresholds screen | DONE | fd6261b |
+| 8.4 | Trip history screen + CSV export | DONE | 238034a |
 | **Phase 9: Android Auto** |
 | 9.1 | AA Screen 1 -- Dials | NOT STARTED | |
 | 9.2 | AA Screen 2 -- Graphs | NOT STARTED | |
