@@ -4,7 +4,6 @@ Last updated: 2026-05-31
 
 ## Current State
 
-**Active phase:** Phase 9 -- Android Auto
 **Active phase:** Phase 10 -- Polish
 **Active step:** 10.1 -- Android Auto layout settings
 **Project state:** Phase 9 complete. AAAlertHandler (CarToast on DrivingEvent/HealthAlert, per-type 10s cooldown, aaToastEnabled gate from DetectionConfig, internal pure functions buildAAToastMessage/shouldShowAAToast/alertKeyForAA). All four AA screens fully implemented: DialsScreen, GraphsScreen, SplitPanelScreen, AAAlertHandler. AADataBridge singleton bridging Hilt→CarApp. 483 tests green (12 new AAAlertHandlerTest). Next: Android Auto layout settings.
