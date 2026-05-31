@@ -5,8 +5,8 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 9 -- Android Auto
-**Active step:** 9.1 -- AA Screen 1 -- Dials
-**Project state:** Phase 8 complete. TripHistoryScreen (weekly summary card, day-grouped sticky LazyColumn, LIVE/QUEUED/SYNCED pills, empty state), TripHistoryViewModel (7-day summary, groupByDay), TripDetailScreen (full stats, event list, Export CSV button), TripDetailViewModel (SavedStateHandle tripId, Long navArg fix), CsvExporter (pure toCsv() + FileProvider share intent), FileProvider + file_paths.xml. 425 tests green. All phone screens implemented. Next: Android Auto dials screen.
+**Active step:** 9.2 -- AA Screen 2 -- Graphs
+**Project state:** Step 9.1 complete. AADataBridge (singleton bridging Hilt→CarApp; bind() called from MainActivity), DialsScreen (GridTemplate 6-item: speed/RPM/coolant dials + trip dist/MPG/battery stats, ActionStrip for Graphs/Panel nav), PiDriveCarAppService/PiDriveCarAppSession (rename from My*), AAAlertHandler stub, GraphsScreen/SplitPanelScreen/SplitPageManager stubs. Manifest updated. 441 tests green. Next: flesh out GraphsScreen.
 
 ## Completed
 
@@ -83,7 +83,7 @@ Last updated: 2026-05-31
 | 8.3 | Thresholds screen | DONE | fd6261b |
 | 8.4 | Trip history screen + CSV export | DONE | 238034a |
 | **Phase 9: Android Auto** |
-| 9.1 | AA Screen 1 -- Dials | NOT STARTED | |
+| 9.1 | AA Screen 1 -- Dials | DONE | |
 | 9.2 | AA Screen 2 -- Graphs | NOT STARTED | |
 | 9.3 | AA split-screen panel | NOT STARTED | |
 | 9.4 | AA alerts + CarToast | NOT STARTED | |

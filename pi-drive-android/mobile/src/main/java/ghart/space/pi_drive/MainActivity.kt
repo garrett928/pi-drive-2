@@ -10,6 +10,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import dagger.hilt.android.AndroidEntryPoint
 import ghart.space.pi_drive.di.AppConfig
+import ghart.space.pi_drive.shared.auto.AADataBridge
+import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.data.db.dao.AutoTripDao
 import ghart.space.pi_drive.shared.data.model.DemoScenario
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
@@ -17,9 +19,14 @@ import ghart.space.pi_drive.shared.detection.AccelerometerManager
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
+import ghart.space.pi_drive.shared.settings.ThresholdsManager
+import ghart.space.pi_drive.shared.trip.AutoTripManager
+import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.shared.ui.theme.AccentOptions
 import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 import ghart.space.pi_drive.ui.components.PiDriveScaffold
+import ghart.space.pi_drive.di.ApplicationScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -52,7 +59,12 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var accelManager: AccelerometerManager
     @Inject lateinit var alertManager: AlertManager
     @Inject lateinit var generalSettingsManager: GeneralSettingsManager
+    @Inject lateinit var thresholdsManager: ThresholdsManager
+    @Inject lateinit var vehicleDataSource: VehicleDataSource
+    @Inject lateinit var manualTripManager: ManualTripManager
+    @Inject lateinit var autoTripManager: AutoTripManager
     @Inject lateinit var autoTripDao: AutoTripDao
+    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
@@ -72,6 +84,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         accelManager.start()
         runDataRetentionJob()
+        bindAADataBridge()
         enableEdgeToEdge()
         setContent {
             // Collect general settings so theme and accent update reactively.
@@ -88,6 +101,25 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         accelManager.stop()
+    }
+
+    /**
+     * Connects [AADataBridge] to the Hilt-managed data layer.
+     *
+     * Safe to call once from [onCreate]; the application-scoped [CoroutineScope] keeps
+     * the collection loops alive even after the Activity is destroyed, so the Android Auto
+     * head unit continues receiving data when the phone screen is off.
+     */
+    private fun bindAADataBridge() {
+        AADataBridge.bind(
+            vehicleDataSource = vehicleDataSource,
+            manualTripManager = manualTripManager,
+            autoTripManager = autoTripManager,
+            alertManager = alertManager,
+            thresholdsManager = thresholdsManager,
+            scope = applicationScope,
+        )
+        Log.d("PiDrive", "AADataBridge: bound to live data sources")
     }
 
     /**

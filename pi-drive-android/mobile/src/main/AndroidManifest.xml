@@ -34,7 +34,7 @@
         </activity>
 
         <service
-            android:name="ghart.space.pi_drive.shared.MyCarAppService"
+            android:name="ghart.space.pi_drive.shared.auto.PiDriveCarAppService"
             android:exported="true">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />

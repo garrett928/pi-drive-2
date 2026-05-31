@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
  * hot [StateFlow]s. They never pull data directly; the implementation pushes updates.
  *
  * Lifecycle:
- * 1. Inject or obtain a [VehicleDataSource] (via Hilt, from [DataModule]).
+ * 1. Inject or obtain a [VehicleDataSource] (via Hilt, from DataModule).
  * 2. Observe [connectionState] to show connection UI.
  * 3. Call [startPolling] when the dashboard is visible.
  * 4. Observe [snapshot] for live metric values.
