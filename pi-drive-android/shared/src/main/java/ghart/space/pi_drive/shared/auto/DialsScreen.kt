@@ -15,7 +15,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import ghart.space.pi_drive.shared.data.model.AutoTripState
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.ManualTripState
+import ghart.space.pi_drive.shared.data.model.MetricId
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
+import ghart.space.pi_drive.shared.settings.AALayoutConfig
 import kotlinx.coroutines.launch
 
 /**
@@ -46,6 +48,7 @@ class DialsScreen(carContext: CarContext) : Screen(carContext) {
     private var latestManualTrip: ManualTripState = AADataBridge.manualTripState.value
     private var latestAutoTrip: AutoTripState? = null
     private var latestConnectionState: ConnectionState = ConnectionState.Disconnected()
+    private var latestLayout: AALayoutConfig = AADataBridge.aaLayout.value
 
     init {
         lifecycleScope.launch {
@@ -74,27 +77,33 @@ class DialsScreen(carContext: CarContext) : Screen(carContext) {
                         invalidate()
                     }
                 }
+                launch {
+                    AADataBridge.aaLayout.collect { layout ->
+                        latestLayout = layout
+                        invalidate()
+                    }
+                }
             }
         }
         Log.d(TAG, "DialsScreen: created")
     }
 
     override fun onGetTemplate(): Template {
-        val data = buildDialsTemplateData(
-            snapshot = latestSnapshot,
-            manualTrip = latestManualTrip,
-            autoTrip = latestAutoTrip,
-            connectionState = latestConnectionState,
-        )
+        val slots = latestLayout.dialsSlots
+        val snap = latestSnapshot
+        val manual = latestManualTrip
+        val auto = latestAutoTrip
+        val isStreaming = latestConnectionState is ConnectionState.Connected
 
-        val itemList = ItemList.Builder()
-            .addItem(buildGridItem(data.speedText, "MPH"))
-            .addItem(buildGridItem(data.rpmText, "RPM"))
-            .addItem(buildGridItem(data.coolantText, "COOLANT"))
-            .addItem(buildGridItem(data.tripDistText, "TRIP DIST"))
-            .addItem(buildGridItem(data.tripMpgText, "TRIP MPG"))
-            .addItem(buildGridItem(data.batteryText, if (data.isStreaming) "BATT · LIVE" else "BATTERY"))
-            .build()
+        val itemListBuilder = ItemList.Builder()
+        slots.take(6).forEach { slot ->
+            val valueText = formatSlotValueForAA(slot, snap, manual, auto)
+            val dangered = if (isDangerConditionForAA(slot.metricId, snap)) "⚠ $valueText" else valueText
+            // Battery slot gets a "LIVE" suffix while the OBD connection is active
+            val labelText = if (isStreaming && slot.metricId == MetricId.BATTERY)
+                "${slot.displayLabel} · LIVE" else slot.displayLabel
+            itemListBuilder.addItem(buildGridItem(dangered, labelText))
+        }
 
         val actionStrip = ActionStrip.Builder()
             .addAction(
@@ -113,7 +122,7 @@ class DialsScreen(carContext: CarContext) : Screen(carContext) {
 
         return GridTemplate.Builder()
             .setTitle("Pi Drive")
-            .setSingleList(itemList)
+            .setSingleList(itemListBuilder.build())
             .setActionStrip(actionStrip)
             .build()
     }

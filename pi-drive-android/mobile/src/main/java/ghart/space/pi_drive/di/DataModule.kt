@@ -27,6 +27,7 @@ import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.shared.obd.TcpTransport
 import ghart.space.pi_drive.shared.data.db.dao.PendingUploadDao
+import ghart.space.pi_drive.shared.settings.AALayoutManager
 import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
 import ghart.space.pi_drive.shared.settings.ThresholdsManager
@@ -263,6 +264,20 @@ object DataModule {
     fun provideThresholdsManager(@ApplicationContext context: Context): ThresholdsManager =
         ThresholdsManager(
             context.getSharedPreferences(ThresholdsManager.PREFS_NAME, Context.MODE_PRIVATE)
+        )
+
+    /**
+     * Provides the [AALayoutManager] that persists the Android Auto screen layout configuration.
+     *
+     * Stored in its own SharedPreferences file so AA layout changes don't interfere with
+     * the phone dashboard or general settings. Both [AALayoutViewModel] and [AADataBridge]
+     * use this singleton for reactive updates.
+     */
+    @Provides
+    @Singleton
+    fun provideAALayoutManager(@ApplicationContext context: Context): AALayoutManager =
+        AALayoutManager(
+            context.getSharedPreferences(AALayoutManager.PREFS_NAME, Context.MODE_PRIVATE)
         )
 
     /**

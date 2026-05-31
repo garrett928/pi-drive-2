@@ -15,6 +15,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import ghart.space.pi_drive.shared.data.model.AutoTripState
 import ghart.space.pi_drive.shared.data.model.ManualTripState
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
+import ghart.space.pi_drive.shared.settings.AALayoutConfig
+import ghart.space.pi_drive.shared.settings.AAWidgetType
 import kotlinx.coroutines.launch
 
 /**
@@ -41,6 +43,7 @@ class GraphsScreen(carContext: CarContext) : Screen(carContext) {
     private var latestSnapshot: VehicleSnapshot = VehicleSnapshot.EMPTY
     private var latestManualTrip: ManualTripState = AADataBridge.manualTripState.value
     private var latestAutoTrip: AutoTripState? = null
+    private var latestLayout: AALayoutConfig = AADataBridge.aaLayout.value
 
     init {
         lifecycleScope.launch {
@@ -48,44 +51,33 @@ class GraphsScreen(carContext: CarContext) : Screen(carContext) {
                 launch { AADataBridge.snapshot.collect { latestSnapshot = it; invalidate() } }
                 launch { AADataBridge.manualTripState.collect { latestManualTrip = it; invalidate() } }
                 launch { AADataBridge.autoTripState.collect { latestAutoTrip = it; invalidate() } }
+                launch { AADataBridge.aaLayout.collect { latestLayout = it; invalidate() } }
             }
         }
         Log.d(TAG, "GraphsScreen: created")
     }
 
     override fun onGetTemplate(): Template {
-        val data = buildGraphsTemplateData(
-            snapshot = latestSnapshot,
-            manualTrip = latestManualTrip,
-            autoTrip = latestAutoTrip,
-        )
+        val slots = latestLayout.graphsSlots
+        val snap = latestSnapshot
+        val manual = latestManualTrip
+        val auto = latestAutoTrip
 
-        val itemList = ItemList.Builder()
-            .addItem(
+        val itemListBuilder = ItemList.Builder()
+        slots.take(4).forEach { slot ->
+            val valueText = formatSlotValueForAA(slot, snap, manual, auto)
+            val title = "${slot.displayLabel} · $valueText"
+            val detail = if (slot.widgetType == AAWidgetType.TREND)
+                slot.metricId.displayLabel
+            else
+                slot.displayLabel
+            itemListBuilder.addItem(
                 Row.Builder()
-                    .setTitle(data.throttleTitle)
-                    .addText(data.throttleDetail)
+                    .setTitle(title)
+                    .addText(detail)
                     .build()
             )
-            .addItem(
-                Row.Builder()
-                    .setTitle(data.gforceTitle)
-                    .addText(data.gforceDetail)
-                    .build()
-            )
-            .addItem(
-                Row.Builder()
-                    .setTitle(data.instantMpgTitle)
-                    .addText(data.mpgDetail)
-                    .build()
-            )
-            .addItem(
-                Row.Builder()
-                    .setTitle(data.manualTripTitle)
-                    .addText(data.manualTripDetail)
-                    .build()
-            )
-            .build()
+        }
 
         val actionStrip = ActionStrip.Builder()
             .addAction(
@@ -99,7 +91,7 @@ class GraphsScreen(carContext: CarContext) : Screen(carContext) {
         return ListTemplate.Builder()
             .setTitle("Pi Drive · Graphs")
             .setHeaderAction(Action.BACK)
-            .setSingleList(itemList)
+            .setSingleList(itemListBuilder.build())
             .setActionStrip(actionStrip)
             .build()
     }

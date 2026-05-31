@@ -18,6 +18,7 @@ import ghart.space.pi_drive.shared.detection.AccelerationDetector
 import ghart.space.pi_drive.shared.detection.AccelerometerManager
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.GForceDetector
+import ghart.space.pi_drive.shared.settings.AALayoutManager
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
 import ghart.space.pi_drive.shared.settings.ThresholdsManager
 import ghart.space.pi_drive.shared.trip.AutoTripManager
@@ -60,6 +61,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var alertManager: AlertManager
     @Inject lateinit var generalSettingsManager: GeneralSettingsManager
     @Inject lateinit var thresholdsManager: ThresholdsManager
+    @Inject lateinit var aaLayoutManager: AALayoutManager
     @Inject lateinit var vehicleDataSource: VehicleDataSource
     @Inject lateinit var manualTripManager: ManualTripManager
     @Inject lateinit var autoTripManager: AutoTripManager
@@ -117,6 +119,7 @@ class MainActivity : ComponentActivity() {
             autoTripManager = autoTripManager,
             alertManager = alertManager,
             thresholdsManager = thresholdsManager,
+            aaLayoutManager = aaLayoutManager,
             scope = applicationScope,
         )
         Log.d("PiDrive", "AADataBridge: bound to live data sources")

@@ -6,6 +6,7 @@ import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.ManualTripState
 import ghart.space.pi_drive.shared.data.model.MetricId
+import ghart.space.pi_drive.shared.settings.AALayoutManager
 import ghart.space.pi_drive.shared.settings.DashboardLayout
 import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
 import ghart.space.pi_drive.shared.settings.DashboardTileConfig
@@ -30,6 +31,7 @@ import javax.inject.Inject
  * @param dataSource              The live vehicle data source — provides [connectionState].
  * @param generalSettingsManager  Persists user appearance and behaviour preferences.
  * @param dashboardLayoutManager  Persists the phone dashboard tile layout and featured metric.
+ * @param aaLayoutManager         Persists the Android Auto screen layout; reset on "Reset all settings".
  * @param telemetryConfigRepository Persists server / signal configuration.
  * @param manualTripManager       Provides and resets the manual trip accumulator.
  * @param thresholdsManager       Persists detection thresholds; reset on "Reset all settings".
@@ -39,6 +41,7 @@ class SettingsViewModel @Inject constructor(
     dataSource: VehicleDataSource,
     private val generalSettingsManager: GeneralSettingsManager,
     private val dashboardLayoutManager: DashboardLayoutManager,
+    private val aaLayoutManager: AALayoutManager,
     private val telemetryConfigRepository: TelemetryConfigRepository,
     private val manualTripManager: ManualTripManager,
     private val thresholdsManager: ThresholdsManager,
@@ -88,6 +91,7 @@ class SettingsViewModel @Inject constructor(
     fun resetAllSettings() {
         generalSettingsManager.reset()
         dashboardLayoutManager.reset()
+        aaLayoutManager.reset()
         thresholdsManager.reset()
     }
 

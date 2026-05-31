@@ -8,6 +8,8 @@ import ghart.space.pi_drive.shared.data.model.ManualTripState
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.DetectionConfig
+import ghart.space.pi_drive.shared.settings.AALayoutConfig
+import ghart.space.pi_drive.shared.settings.AALayoutManager
 import ghart.space.pi_drive.shared.settings.ThresholdsManager
 import ghart.space.pi_drive.shared.trip.AutoTripManager
 import ghart.space.pi_drive.shared.trip.ManualTripManager
@@ -51,6 +53,7 @@ object AADataBridge {
     private val _autoTripState = MutableStateFlow<AutoTripState?>(null)
     private val _alerts = MutableSharedFlow<AlertAction>(extraBufferCapacity = 16)
     private val _detectionConfig = MutableStateFlow(DetectionConfig())
+    private val _aaLayout = MutableStateFlow(AALayoutConfig())
 
     /** Live vehicle telemetry. Initial value is [VehicleSnapshot.EMPTY]; updates after [bind]. */
     val snapshot: StateFlow<VehicleSnapshot> = _snapshot.asStateFlow()
@@ -74,6 +77,14 @@ object AADataBridge {
     val detectionConfig: StateFlow<DetectionConfig> = _detectionConfig.asStateFlow()
 
     /**
+     * Current Android Auto screen layout configuration.
+     *
+     * Drives which metrics are shown in [DialsScreen], [GraphsScreen], and [SplitPanelScreen].
+     * Updated reactively when the user changes the layout in Settings > Android Auto layout.
+     */
+    val aaLayout: StateFlow<AALayoutConfig> = _aaLayout.asStateFlow()
+
+    /**
      * Connects this bridge to the Hilt-managed data layer.
      *
      * Should be called once from [MainActivity.onCreate] after Hilt injection. The [scope]
@@ -88,6 +99,7 @@ object AADataBridge {
      * @param autoTripManager    Tracks connection-boundary auto trips.
      * @param alertManager       Emits driving events and health alerts.
      * @param thresholdsManager  Provides reactive detection config for AA toast enable flag.
+     * @param aaLayoutManager    Provides reactive AA screen layout config.
      * @param scope              Coroutine scope that outlives the CarAppService session.
      */
     fun bind(
@@ -96,6 +108,7 @@ object AADataBridge {
         autoTripManager: AutoTripManager,
         alertManager: AlertManager,
         thresholdsManager: ThresholdsManager,
+        aaLayoutManager: AALayoutManager,
         scope: CoroutineScope,
     ) {
         scope.launch { vehicleDataSource.snapshot.collect { _snapshot.value = it } }
@@ -104,6 +117,7 @@ object AADataBridge {
         scope.launch { autoTripManager.currentTrip.collect { _autoTripState.value = it } }
         scope.launch { alertManager.alerts.collect { _alerts.emit(it) } }
         scope.launch { thresholdsManager.detectionConfig.collect { _detectionConfig.value = it } }
+        scope.launch { aaLayoutManager.layout.collect { _aaLayout.value = it } }
     }
 
     /** For tests: directly override the snapshot without going through [bind]. */
@@ -123,4 +137,7 @@ object AADataBridge {
 
     /** For tests: emit an alert directly into the alerts flow. */
     internal suspend fun emitAlert(alert: AlertAction) { _alerts.emit(alert) }
+
+    /** For tests: directly override the AA layout config. */
+    internal fun setAALayout(c: AALayoutConfig) { _aaLayout.value = c }
 }
