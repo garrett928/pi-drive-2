@@ -48,6 +48,20 @@
             android:foregroundServiceType="dataSync" />
 
         <!--
+            Serves CSV export files from the app cache directory to external share targets
+            without requiring WRITE_EXTERNAL_STORAGE permission.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!--
             Disable the default WorkManager startup initializer so that
             PiDriveApplication.workManagerConfiguration is used instead.
             Required when implementing Configuration.Provider with a custom WorkerFactory.

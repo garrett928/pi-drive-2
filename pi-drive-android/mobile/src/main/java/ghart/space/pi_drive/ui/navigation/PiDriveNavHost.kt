@@ -3,11 +3,14 @@ package ghart.space.pi_drive.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import androidx.navigation.navArgument
 import ghart.space.pi_drive.ui.screens.LiveDashboardScreen
 import ghart.space.pi_drive.ui.screens.SettingsScreen
+import ghart.space.pi_drive.ui.screens.TripDetailScreen
 import ghart.space.pi_drive.ui.screens.TripHistoryScreen
 import ghart.space.pi_drive.ui.screens.connect.ConnectDoneScreen
 import ghart.space.pi_drive.ui.screens.connect.ConnectPairScreen
@@ -56,5 +59,11 @@ fun PiDriveNavHost(
         composable(NavRoutes.SETTINGS_HOME_LAYOUT) { SettingsHomeLayoutScreen() }
         composable(NavRoutes.SETTINGS_AA_LAYOUT)   { SettingsAALayoutScreen(navController) }
         composable(NavRoutes.SETTINGS_THRESHOLDS)  { SettingsThresholdsScreen() }
+
+        // ── Trip detail ───────────────────────────────────────────────────
+        composable(
+            route = NavRoutes.TRIP_DETAIL,
+            arguments = listOf(navArgument("tripId") { type = NavType.LongType }),
+        ) { TripDetailScreen(navController) }
     }
 }
