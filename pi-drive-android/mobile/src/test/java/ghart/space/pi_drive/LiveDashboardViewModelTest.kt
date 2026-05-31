@@ -1,6 +1,6 @@
 package ghart.space.pi_drive
 
-import androidx.lifecycle.SavedStateHandle
+import android.content.SharedPreferences
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.db.dao.DrivingEventDao
@@ -17,6 +17,8 @@ import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
+import ghart.space.pi_drive.shared.settings.DashboardLayout
+import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
 import ghart.space.pi_drive.shared.trip.AutoTripManager
 import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
@@ -43,6 +45,50 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Instant
 
+// ── Fakes ─────────────────────────────────────────────────────────────────────
+
+/**
+ * In-memory [SharedPreferences] used by [DashboardLayoutManager] in tests.
+ * Same structure as GeneralSettingsManagerTest.FakeSharedPreferences.
+ */
+private class FakeSharedPreferences : SharedPreferences {
+    private val store = mutableMapOf<String, Any?>()
+
+    inner class FakeEditor : SharedPreferences.Editor {
+        private val pending = mutableMapOf<String, Any?>()
+        private var clearPending = false
+
+        override fun putString(k: String, v: String?) = apply { pending[k] = v }
+        override fun putStringSet(k: String, v: Set<String>?) = apply { pending[k] = v }
+        override fun putInt(k: String, v: Int) = apply { pending[k] = v }
+        override fun putLong(k: String, v: Long) = apply { pending[k] = v }
+        override fun putFloat(k: String, v: Float) = apply { pending[k] = v }
+        override fun putBoolean(k: String, v: Boolean) = apply { pending[k] = v }
+        override fun remove(k: String) = apply { pending[k] = null }
+        override fun clear() = apply { clearPending = true }
+
+        override fun commit(): Boolean { apply(); return true }
+
+        override fun apply() {
+            if (clearPending) store.clear()
+            pending.forEach { (k, v) -> if (v == null) store.remove(k) else store[k] = v }
+        }
+    }
+
+    override fun getAll(): Map<String, *> = store.toMap()
+    override fun getString(k: String, def: String?): String? = (store[k] as? String) ?: def
+    override fun getStringSet(k: String, def: Set<String>?): Set<String>? =
+        (store[k] as? Set<*>)?.filterIsInstance<String>()?.toSet() ?: def
+    override fun getInt(k: String, def: Int): Int = (store[k] as? Int) ?: def
+    override fun getLong(k: String, def: Long): Long = (store[k] as? Long) ?: def
+    override fun getFloat(k: String, def: Float): Float = (store[k] as? Float) ?: def
+    override fun getBoolean(k: String, def: Boolean): Boolean = (store[k] as? Boolean) ?: def
+    override fun contains(k: String): Boolean = store.containsKey(k)
+    override fun edit(): SharedPreferences.Editor = FakeEditor()
+    override fun registerOnSharedPreferenceChangeListener(l: SharedPreferences.OnSharedPreferenceChangeListener) {}
+    override fun unregisterOnSharedPreferenceChangeListener(l: SharedPreferences.OnSharedPreferenceChangeListener) {}
+}
+
 /** Builds a no-op [ManualTripManager] suitable for ViewModel tests that don't test trip behavior. */
 private fun noOpManualTripManager(scope: CoroutineScope): ManualTripManager {
     val fakeDao = object : ManualTripDao {
@@ -68,6 +114,7 @@ private fun noOpAutoTripManager(scope: CoroutineScope): AutoTripManager {
         override fun getAll() = kotlinx.coroutines.flow.emptyFlow<List<AutoTripEntity>>()
         override suspend fun getByDateRange(from: java.time.Instant, to: java.time.Instant) = emptyList<AutoTripEntity>()
         override suspend fun delete(trip: AutoTripEntity) {}
+        override suspend fun deleteOlderThan(before: java.time.Instant) {}
     }
     return AutoTripManager(
         snapshots = MutableStateFlow(VehicleSnapshot.EMPTY),
@@ -93,6 +140,14 @@ private fun noOpAlertManager(scope: CoroutineScope): AlertManager {
     )
 }
 
+/** Default [DashboardLayoutManager] backed by a [FakeSharedPreferences] instance. */
+private fun defaultLayoutManager(): DashboardLayoutManager =
+    DashboardLayoutManager(FakeSharedPreferences())
+
+/** [DashboardLayoutManager] initialised with [layout] already persisted. */
+private fun layoutManagerWith(layout: DashboardLayout): DashboardLayoutManager =
+    DashboardLayoutManager(FakeSharedPreferences()).also { it.update(layout) }
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class LiveDashboardViewModelTest {
 
@@ -110,7 +165,7 @@ class LiveDashboardViewModelTest {
         AppConfig.isDemoMode = false
     }
 
-    // ── Metadata tests (no coroutine needed) ──────────────────────────────────
+    // ── Metadata tests ────────────────────────────────────────────────────────
 
     @Test
     fun `featuredMetricId defaults to SPEED`() = runTest {
@@ -125,9 +180,9 @@ class LiveDashboardViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
-        assertEquals(MetricId.SPEED, viewModel.featuredMetricId)
+        assertEquals(MetricId.SPEED, viewModel.featuredMetricId.value)
     }
 
     @Test
@@ -143,50 +198,54 @@ class LiveDashboardViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
-        assertEquals("mph", viewModel.featuredUnit)
-        assertEquals("SPEED", viewModel.featuredLabel)
+        assertEquals("mph", viewModel.featuredUnit.value)
+        assertEquals("SPEED", viewModel.featuredLabel.value)
     }
 
     @Test
-    fun `savedStateHandle overrides default metric`() = runTest {
+    fun `layout manager can override featured metric to RPM`() = runTest {
         val dataSource = DemoVehicleDataSource(
             scenario = DemoScenario.CRUISE,
             coroutineScope = backgroundScope,
         )
-        val handle = SavedStateHandle(mapOf("featured_metric" to "RPM"))
         val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
+        val layoutManager = layoutManagerWith(DashboardLayout(featuredMetricId = MetricId.RPM))
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = handle,
+            dashboardLayoutManager = layoutManager,
         )
-        assertEquals(MetricId.RPM, viewModel.featuredMetricId)
-        assertEquals("rpm", viewModel.featuredUnit)
-        assertEquals("RPM", viewModel.featuredLabel)
+        assertEquals(MetricId.RPM, viewModel.featuredMetricId.value)
+        assertEquals("rpm", viewModel.featuredUnit.value)
+        assertEquals("RPM", viewModel.featuredLabel.value)
     }
 
     @Test
-    fun `invalid savedStateHandle metric falls back to SPEED`() = runTest {
+    fun `changing layout manager featured metric updates ViewModel`() = runTest {
         val dataSource = DemoVehicleDataSource(
             scenario = DemoScenario.CRUISE,
             coroutineScope = backgroundScope,
         )
-        val handle = SavedStateHandle(mapOf("featured_metric" to "NOT_A_METRIC"))
         val stubManager = ConnectionManager(scope = backgroundScope, transportFactory = { MockTransport() })
+        val layoutManager = defaultLayoutManager()
         val viewModel = LiveDashboardViewModel(
             dataSource = dataSource,
             connectionManager = stubManager,
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = handle,
+            dashboardLayoutManager = layoutManager,
         )
-        assertEquals(MetricId.SPEED, viewModel.featuredMetricId)
+
+        layoutManager.updateFeaturedMetric(MetricId.COOLANT)
+        advanceTimeBy(100)
+
+        assertEquals(MetricId.COOLANT, viewModel.featuredMetricId.value)
     }
 
     // ── Live data tests ───────────────────────────────────────────────────────
@@ -205,7 +264,7 @@ class LiveDashboardViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
         val values = mutableListOf<String>()
@@ -230,7 +289,7 @@ class LiveDashboardViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
         val values = mutableListOf<String>()
@@ -256,7 +315,7 @@ class LiveDashboardViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
         val sparklineLists = mutableListOf<List<Float>>()
@@ -282,18 +341,15 @@ class LiveDashboardViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
-        // Subscribe first — SharingStarted.WhileSubscribed won't update without a subscriber
         val liveValues = mutableListOf<Boolean>()
         val collectJob = launch { viewModel.isLive.take(2).toList(liveValues) }
 
-        // Advance past the 500ms simulated handshake delay
         advanceTimeBy(1_500)
         collectJob.join()
 
-        // Should go false (Disconnected) → true (Connected)
         assertTrue("isLive should become true after demo connects, got: $liveValues", liveValues.contains(true))
     }
 }

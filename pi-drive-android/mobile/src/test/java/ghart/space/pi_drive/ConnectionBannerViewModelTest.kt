@@ -1,6 +1,9 @@
 package ghart.space.pi_drive
 
-import androidx.lifecycle.SavedStateHandle
+import android.content.SharedPreferences
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import ghart.space.pi_drive.di.AppConfig
 import ghart.space.pi_drive.shared.data.DemoVehicleDataSource
 import ghart.space.pi_drive.shared.data.db.dao.AutoTripDao
@@ -16,6 +19,7 @@ import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
+import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
 import ghart.space.pi_drive.shared.trip.AutoTripManager
 import ghart.space.pi_drive.shared.trip.ManualTripManager
 import ghart.space.pi_drive.ui.viewmodel.LiveDashboardViewModel
@@ -39,6 +43,37 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.Instant
+
+/** Minimal no-op [SharedPreferences] stub — only [getString]/[edit] needed for [DashboardLayoutManager]. */
+private class FakeCBPreferences : SharedPreferences {
+    private val store = mutableMapOf<String, Any?>()
+    private inner class Ed : SharedPreferences.Editor {
+        private val p = mutableMapOf<String, Any?>()
+        override fun putString(k: String, v: String?) = apply { p[k] = v }
+        override fun putStringSet(k: String, v: Set<String>?) = apply { p[k] = v }
+        override fun putInt(k: String, v: Int) = apply { p[k] = v }
+        override fun putLong(k: String, v: Long) = apply { p[k] = v }
+        override fun putFloat(k: String, v: Float) = apply { p[k] = v }
+        override fun putBoolean(k: String, v: Boolean) = apply { p[k] = v }
+        override fun remove(k: String) = apply { p[k] = null }
+        override fun clear() = apply { p.clear() }
+        override fun commit(): Boolean { apply(); return true }
+        override fun apply() { p.forEach { (k, v) -> if (v == null) store.remove(k) else store[k] = v } }
+    }
+    override fun getAll(): Map<String, *> = store.toMap()
+    override fun getString(k: String, def: String?): String? = (store[k] as? String) ?: def
+    override fun getStringSet(k: String, def: Set<String>?): Set<String>? = (store[k] as? Set<*>)?.filterIsInstance<String>()?.toSet() ?: def
+    override fun getInt(k: String, def: Int): Int = (store[k] as? Int) ?: def
+    override fun getLong(k: String, def: Long): Long = (store[k] as? Long) ?: def
+    override fun getFloat(k: String, def: Float): Float = (store[k] as? Float) ?: def
+    override fun getBoolean(k: String, def: Boolean): Boolean = (store[k] as? Boolean) ?: def
+    override fun contains(k: String): Boolean = store.containsKey(k)
+    override fun edit(): SharedPreferences.Editor = Ed()
+    override fun registerOnSharedPreferenceChangeListener(l: SharedPreferences.OnSharedPreferenceChangeListener) {}
+    override fun unregisterOnSharedPreferenceChangeListener(l: SharedPreferences.OnSharedPreferenceChangeListener) {}
+}
+
+private fun defaultLayoutManager() = DashboardLayoutManager(FakeCBPreferences())
 
 /** Builds a no-op [ManualTripManager] suitable for ViewModel tests that don't test trip behavior. */
 private fun noOpManualTripManager(scope: CoroutineScope): ManualTripManager {
@@ -65,6 +100,7 @@ private fun noOpAutoTripManager(scope: CoroutineScope): AutoTripManager {
         override fun getAll() = kotlinx.coroutines.flow.emptyFlow<List<AutoTripEntity>>()
         override suspend fun getByDateRange(from: java.time.Instant, to: java.time.Instant) = emptyList<AutoTripEntity>()
         override suspend fun delete(trip: AutoTripEntity) {}
+        override suspend fun deleteOlderThan(before: java.time.Instant) {}
     }
     return AutoTripManager(
         snapshots = MutableStateFlow(VehicleSnapshot.EMPTY),
@@ -132,7 +168,7 @@ class ConnectionBannerViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
         val states = mutableListOf<ConnectionState>()
@@ -163,7 +199,7 @@ class ConnectionBannerViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
         val states = mutableListOf<ConnectionState>()
@@ -192,7 +228,7 @@ class ConnectionBannerViewModelTest {
             alertManager = noOpAlertManager(backgroundScope),
             manualTripManager = noOpManualTripManager(backgroundScope),
             autoTripManager = noOpAutoTripManager(backgroundScope),
-            savedStateHandle = SavedStateHandle(),
+            dashboardLayoutManager = defaultLayoutManager(),
         )
 
         val states = mutableListOf<ConnectionState>()

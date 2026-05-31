@@ -3,14 +3,12 @@ package ghart.space.pi_drive.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import ghart.space.pi_drive.shared.settings.WidgetType
 import ghart.space.pi_drive.shared.ui.components.PDCard
 import ghart.space.pi_drive.ui.components.widgets.BarWidget
 import ghart.space.pi_drive.ui.components.widgets.DialWidget
 import ghart.space.pi_drive.ui.components.widgets.NumberWidget
 import ghart.space.pi_drive.ui.components.widgets.XYWidget
-
-/** Widget type for a metric tile. Determines which widget composable is rendered. */
-enum class WidgetType { DIAL, BAR, NUMBER, XY }
 
 /**
  * Dashboard metric tile — a [PDCard] wrapping one of the four widget types.

@@ -55,11 +55,14 @@ fun LiveDashboardScreen(
     viewModel: LiveDashboardViewModel = hiltViewModel(),
 ) {
     val featuredValue by viewModel.featuredValue.collectAsStateWithLifecycle()
+    val featuredLabel by viewModel.featuredLabel.collectAsStateWithLifecycle()
+    val featuredUnit by viewModel.featuredUnit.collectAsStateWithLifecycle()
     val sparklineData by viewModel.sparklineData.collectAsStateWithLifecycle()
     val isLive by viewModel.isLive.collectAsStateWithLifecycle()
     val snapshot by viewModel.currentSnapshot.collectAsStateWithLifecycle()
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val currentAlert by viewModel.currentAlert.collectAsStateWithLifecycle()
+    val dashboardLayout by viewModel.dashboardLayout.collectAsStateWithLifecycle()
 
     val manualTripState by viewModel.manualTripState.collectAsStateWithLifecycle()
     val instantMpg = snapshot.extractMetricValue(MetricId.MPG_INSTANT).raw
@@ -82,8 +85,8 @@ fun LiveDashboardScreen(
 
             FeaturedCard(
                 value = featuredValue,
-                unit = viewModel.featuredUnit,
-                label = viewModel.featuredLabel,
+                unit = featuredUnit,
+                label = featuredLabel,
                 sparklineData = sparklineData,
                 isLive = isLive,
             )
@@ -106,6 +109,7 @@ fun LiveDashboardScreen(
 
             TileGrid(
                 snapshot = snapshot,
+                tiles = dashboardLayout.tiles,
                 modifier = Modifier.fillMaxWidth(),
             )
 

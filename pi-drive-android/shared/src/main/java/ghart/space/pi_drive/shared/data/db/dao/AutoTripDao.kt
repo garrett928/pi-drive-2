@@ -52,4 +52,14 @@ interface AutoTripDao {
     /** Deletes [trip] from the database. */
     @Delete
     suspend fun delete(trip: AutoTripEntity)
+
+    /**
+     * Deletes all completed trips (those with a non-null [AutoTripEntity.endTime]) whose
+     * [AutoTripEntity.endTime] is earlier than [before].
+     *
+     * Called on app launch to enforce the data-retention policy set in [GeneralSettings].
+     * Active trips (endTime IS NULL) are never deleted by this query.
+     */
+    @Query("DELETE FROM auto_trips WHERE endTime IS NOT NULL AND endTime < :before")
+    suspend fun deleteOlderThan(before: java.time.Instant)
 }

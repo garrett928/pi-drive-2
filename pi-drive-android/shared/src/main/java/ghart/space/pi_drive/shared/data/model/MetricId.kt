@@ -1,5 +1,7 @@
 package ghart.space.pi_drive.shared.data.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Identifies one of the 16 displayable vehicle metrics.
  *
@@ -11,6 +13,7 @@ package ghart.space.pi_drive.shared.data.model
  * MANUAL_TRIP) return null from [VehicleSnapshot.extractMetricValue] — they are
  * computed by the trip accumulator, not from a single snapshot.
  */
+@Serializable
 enum class MetricId(
     val displayLabel: String,
     val unit: String,

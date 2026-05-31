@@ -55,6 +55,7 @@ class AutoTripDetectorTest {
         override fun getAll(): Flow<List<AutoTripEntity>> = flow { emit(trips.toList()) }
         override suspend fun getByDateRange(from: Instant, to: Instant) = emptyList<AutoTripEntity>()
         override suspend fun delete(trip: AutoTripEntity) { trips.removeIf { it.id == trip.id } }
+        override suspend fun deleteOlderThan(before: Instant) { trips.removeIf { it.endTime != null && it.endTime!! < before } }
     }
 
     // ── Builder ───────────────────────────────────────────────────────────────

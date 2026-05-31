@@ -28,6 +28,8 @@ import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.MockTransport
 import ghart.space.pi_drive.shared.obd.TcpTransport
 import ghart.space.pi_drive.shared.data.db.dao.PendingUploadDao
+import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
+import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
 import ghart.space.pi_drive.shared.telemetry.OfflineBuffer
 import ghart.space.pi_drive.shared.telemetry.TelemetryConfigRepository
 import ghart.space.pi_drive.shared.telemetry.UploadWorker
@@ -230,6 +232,32 @@ object DataModule {
         dao = dao,
         scope = scope,
     )
+
+    /**
+     * Provides the [GeneralSettingsManager] that persists user appearance and behaviour preferences.
+     *
+     * Constructed with the app's [SharedPreferences] file named [GeneralSettingsManager.PREFS_NAME]
+     * so preferences survive across process restarts.
+     */
+    @Provides
+    @Singleton
+    fun provideGeneralSettingsManager(@ApplicationContext context: Context): GeneralSettingsManager =
+        GeneralSettingsManager(
+            context.getSharedPreferences(GeneralSettingsManager.PREFS_NAME, Context.MODE_PRIVATE)
+        )
+
+    /**
+     * Provides the [DashboardLayoutManager] that persists the phone dashboard tile configuration.
+     *
+     * Stored in its own SharedPreferences file so layout changes don't interfere with
+     * general settings. Both [LiveDashboardViewModel] and the layout editor use this singleton.
+     */
+    @Provides
+    @Singleton
+    fun provideDashboardLayoutManager(@ApplicationContext context: Context): DashboardLayoutManager =
+        DashboardLayoutManager(
+            context.getSharedPreferences(DashboardLayoutManager.PREFS_NAME, Context.MODE_PRIVATE)
+        )
 
     /**
      * Provides the [TelemetryConfigRepository] that persists [TelemetryConfig] to SharedPreferences.

@@ -5,15 +5,24 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import dagger.hilt.android.AndroidEntryPoint
 import ghart.space.pi_drive.di.AppConfig
+import ghart.space.pi_drive.shared.data.db.dao.AutoTripDao
 import ghart.space.pi_drive.shared.data.model.DemoScenario
 import ghart.space.pi_drive.shared.detection.AccelerationDetector
 import ghart.space.pi_drive.shared.detection.AccelerometerManager
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.GForceDetector
+import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
+import ghart.space.pi_drive.shared.ui.theme.AccentOptions
 import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 import ghart.space.pi_drive.ui.components.PiDriveScaffold
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 /**
@@ -23,16 +32,17 @@ import javax.inject.Inject
  * `super.onCreate()`, so that Hilt's [SingletonComponent] sees the correct
  * mode flags when it lazily constructs the dependency graph on first access.
  *
+ * On startup, this activity also:
+ * - Registers the accelerometer for G-force detection.
+ * - Runs the data-retention job to delete auto trips older than the user's
+ *   configured retention period.
+ *
  * Supported intent extras:
  * - `demo_mode` (Boolean) — use [DemoVehicleDataSource] instead of live OBD
  * - `demo_scenario` (String) — which [DemoScenario] to run (default: CRUISE)
  * - `tcp_mode` (Boolean) — route OBD traffic through a TCP ELM327 emulator
  * - `tcp_host` (String) — emulator host (default: 10.0.2.2 = localhost in emulator)
  * - `tcp_port` (Int) — emulator port (default: 35000)
- *
- * [AccelerationDetector] is injected here (rather than in [PiDriveApplication]) so that
- * [AppConfig] flags are set before the Hilt singleton graph is first accessed, ensuring
- * the detector collects from the correct [VehicleDataSource] implementation.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -41,6 +51,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var gForceDetector: GForceDetector
     @Inject lateinit var accelManager: AccelerometerManager
     @Inject lateinit var alertManager: AlertManager
+    @Inject lateinit var generalSettingsManager: GeneralSettingsManager
+    @Inject lateinit var autoTripDao: AutoTripDao
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
@@ -59,9 +71,15 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         accelManager.start()
+        runDataRetentionJob()
         enableEdgeToEdge()
         setContent {
-            PiDriveTheme {
+            // Collect general settings so theme and accent update reactively.
+            val settings by generalSettingsManager.settings.collectAsStateWithLifecycle()
+            PiDriveTheme(
+                darkTheme = settings.isDarkTheme,
+                accent = AccentOptions.all.getOrElse(settings.accentIndex) { AccentOptions.WarmOrange },
+            ) {
                 PiDriveScaffold()
             }
         }
@@ -70,5 +88,23 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         accelManager.stop()
+    }
+
+    /**
+     * Deletes completed auto trips older than the user's configured retention period.
+     *
+     * Runs once per launch in [lifecycleScope]. Trips with `retentionDays == -1` (unlimited)
+     * are never deleted. Active trips (those with no end time) are also never deleted — the
+     * Room query only targets rows with a non-null `endTime`.
+     */
+    private fun runDataRetentionJob() {
+        val retentionDays = generalSettingsManager.settings.value.dataRetentionDays
+        if (retentionDays < 0) return // unlimited — nothing to delete
+
+        lifecycleScope.launch {
+            val cutoff = Instant.now().minus(retentionDays.toLong(), ChronoUnit.DAYS)
+            autoTripDao.deleteOlderThan(cutoff)
+            Log.d("PiDrive", "Data retention: deleted trips older than $retentionDays days")
+        }
     }
 }
