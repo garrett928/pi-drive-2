@@ -5,8 +5,9 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 9 -- Android Auto
-**Active step:** 9.4 -- AA Alerts + CarToast
-**Project state:** Steps 9.1-9.3 complete. SplitPanelScreen (GridTemplate, two pages: Hero with instant MPG hero + 4 pills, Tiles with 6 compact metrics), SplitPageManager (togglePage/showHero/showTiles). 471 tests green (15 new SplitPanelScreenTest). Next: AAAlertHandlerTest.
+**Active phase:** Phase 10 -- Polish
+**Active step:** 10.1 -- Android Auto layout settings
+**Project state:** Phase 9 complete. AAAlertHandler (CarToast on DrivingEvent/HealthAlert, per-type 10s cooldown, aaToastEnabled gate from DetectionConfig, internal pure functions buildAAToastMessage/shouldShowAAToast/alertKeyForAA). All four AA screens fully implemented: DialsScreen, GraphsScreen, SplitPanelScreen, AAAlertHandler. AADataBridge singleton bridging Hilt→CarApp. 483 tests green (12 new AAAlertHandlerTest). Next: Android Auto layout settings.
 
 ## Completed
 
@@ -40,6 +41,10 @@ Last updated: 2026-05-31
 | 8.2 | Phone home layout editor | DashboardLayout/DashboardLayoutManager (SharedPrefs JSON, StateFlow), SettingsHomeLayoutScreen (featured metric chips + tile grid editor with add/remove/reorder/change-widget-type), WidgetType moved to shared, LiveDashboardViewModel migrated to DashboardLayoutManager; 8 new tests, 398 total green |
 | 8.3 | Thresholds screen | ThresholdsManager (SharedPrefs JSON, DetectionConfig+HealthMonitorConfig StateFlows), ThresholdsViewModel (event count badges, accel calibration), SettingsThresholdsScreen (Acceleration/G-Force/Speed&RPM/WhenTriggered/VehicleHealth sections), all detectors wired to ThresholdsManager via Hilt; detectors/tests updated to StateFlow<Config>; 10 new tests, 408 total green |
 | 8.4 | Trip history screen + CSV export | TripHistoryScreen (weekly summary card, day-grouped sticky LazyColumn, LIVE/QUEUED/SYNCED pills, empty state), TripHistoryViewModel (7-day summary, groupByDay reactive), TripDetailScreen (stats, event list, Export CSV button), TripDetailViewModel (SavedStateHandle tripId; fixed LongType navArg crash), CsvExporter (pure toCsv() + FileProvider share intent), FileProvider + file_paths.xml; test date-grouping fixed to use Int daysAgo; 17 new tests, 425 total green |
+| 9.1 | AA dials screen + Car App service | AADataBridge (singleton bridging Hilt→CarApp, bind() from MainActivity), DialsScreen (GridTemplate 6-item: speed/RPM/coolant dials + trip/MPG/battery stats, danger ⚠ prefix), PiDriveCarAppService/PiDriveCarAppSession (renamed from My*), buildDialsTemplateData pure function; 16 new tests, 441 total green |
+| 9.2 | AA graphs screen | GraphsScreen (ListTemplate: throttle+g-force trend labels + instant MPG + manual trip stat), AAScreenManager (root screen factory, navigation graph documented), buildGraphsTemplateData pure function; 15 new tests, 456 total green |
+| 9.3 | AA split-screen panel | SplitPanelScreen (GridTemplate, page 1: instant MPG hero + 4 pills, page 2: 6 metric tiles), SplitPageManager (togglePage/showHero/showTiles, in-place invalidate); 15 new tests, 471 total green |
+| 9.4 | AA alerts + CarToast | AAAlertHandler (CarToast on DrivingEvent/HealthAlert, 10s per-type cooldown, aaToastEnabled gate), pure functions: buildAAToastMessage/shouldShowAAToast/alertKeyForAA, refactored for testability; 12 new tests, 483 total green |
 
 ## Step Status
 
@@ -86,7 +91,7 @@ Last updated: 2026-05-31
 | 9.1 | AA Screen 1 -- Dials | DONE | |
 | 9.2 | AA Screen 2 -- Graphs | DONE | |
 | 9.3 | AA split-screen panel | DONE | |
-| 9.4 | AA alerts + CarToast | NOT STARTED | |
+| 9.4 | AA alerts + CarToast | DONE | |
 | **Phase 10: Polish** |
 | 10.1 | Android Auto layout settings | NOT STARTED | |
 | 10.2 | TcpTransport + ELM327 emulator | NOT STARTED | |
