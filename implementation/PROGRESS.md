@@ -5,8 +5,8 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 9 -- Android Auto
-**Active step:** 9.3 -- AA Split-Screen Panel
-**Project state:** Steps 9.1-9.2 complete. AAScreenManager added as root-screen factory; PiDriveCarAppSession delegates to it. GraphsScreen (ListTemplate: throttle + g-force + instant MPG + manual trip stat with trend indicators), buildGraphsTemplateData pure function. 456 tests green (15 new GraphsScreenTest). Next: SplitPanelScreen tests.
+**Active step:** 9.4 -- AA Alerts + CarToast
+**Project state:** Steps 9.1-9.3 complete. SplitPanelScreen (GridTemplate, two pages: Hero with instant MPG hero + 4 pills, Tiles with 6 compact metrics), SplitPageManager (togglePage/showHero/showTiles). 471 tests green (15 new SplitPanelScreenTest). Next: AAAlertHandlerTest.
 
 ## Completed
 
@@ -85,7 +85,7 @@ Last updated: 2026-05-31
 | **Phase 9: Android Auto** |
 | 9.1 | AA Screen 1 -- Dials | DONE | |
 | 9.2 | AA Screen 2 -- Graphs | DONE | |
-| 9.3 | AA split-screen panel | NOT STARTED | |
+| 9.3 | AA split-screen panel | DONE | |
 | 9.4 | AA alerts + CarToast | NOT STARTED | |
 | **Phase 10: Polish** |
 | 10.1 | Android Auto layout settings | NOT STARTED | |
