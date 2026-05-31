@@ -44,6 +44,9 @@ object NavRoutes {
     /** Acceleration, G-Force, speed/RPM thresholds. */
     const val SETTINGS_THRESHOLDS = "settings/thresholds"
 
+    /** Hidden developer settings (TCP emulator, demo mode). Unlocked by 7-tap version row. */
+    const val SETTINGS_DEV = "settings/dev"
+
     /** Trip detail with CSV export (tripId argument). */
     const val TRIP_DETAIL = "trips/{tripId}"
 

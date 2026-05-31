@@ -16,6 +16,7 @@ import ghart.space.pi_drive.ui.screens.connect.ConnectDoneScreen
 import ghart.space.pi_drive.ui.screens.connect.ConnectPairScreen
 import ghart.space.pi_drive.ui.screens.connect.ConnectScanScreen
 import ghart.space.pi_drive.ui.screens.settings.SettingsAALayoutScreen
+import ghart.space.pi_drive.ui.screens.settings.SettingsDevScreen
 import ghart.space.pi_drive.ui.screens.settings.SettingsHomeLayoutScreen
 import ghart.space.pi_drive.ui.screens.settings.SettingsServerScreen
 import ghart.space.pi_drive.ui.screens.settings.SettingsThresholdsScreen
@@ -59,6 +60,7 @@ fun PiDriveNavHost(
         composable(NavRoutes.SETTINGS_HOME_LAYOUT) { SettingsHomeLayoutScreen() }
         composable(NavRoutes.SETTINGS_AA_LAYOUT)   { SettingsAALayoutScreen(navController) }
         composable(NavRoutes.SETTINGS_THRESHOLDS)  { SettingsThresholdsScreen() }
+        composable(NavRoutes.SETTINGS_DEV)         { SettingsDevScreen(navController) }
 
         // ── Trip detail ───────────────────────────────────────────────────
         composable(

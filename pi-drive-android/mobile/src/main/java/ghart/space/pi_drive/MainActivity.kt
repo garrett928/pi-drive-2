@@ -19,6 +19,7 @@ import ghart.space.pi_drive.shared.detection.AccelerometerManager
 import ghart.space.pi_drive.shared.detection.AlertManager
 import ghart.space.pi_drive.shared.detection.GForceDetector
 import ghart.space.pi_drive.shared.settings.AALayoutManager
+import ghart.space.pi_drive.shared.settings.DevSettingsManager
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
 import ghart.space.pi_drive.shared.settings.ThresholdsManager
 import ghart.space.pi_drive.shared.trip.AutoTripManager
@@ -71,6 +72,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
         // building the DI graph — injection happens during super.onCreate().
+        // Intent extras set the base mode; developer settings may override them below.
         AppConfig.isDemoMode  = intent.getBooleanExtra("demo_mode", false)
         AppConfig.demoScenario = intent.getStringExtra("demo_scenario")
             ?.let { name -> DemoScenario.entries.find { it.name == name.uppercase() } }
@@ -79,8 +81,15 @@ class MainActivity : ComponentActivity() {
         AppConfig.tcpHost    = intent.getStringExtra("tcp_host") ?: "10.0.2.2"
         AppConfig.tcpPort    = intent.getIntExtra("tcp_port", 35000)
 
+        // Developer settings override intent extras when any mode is active.
+        // Read SharedPreferences directly here (before Hilt injection) so the correct
+        // transport is selected when DataModule first constructs VehicleDataSource.
+        applyDevSettingsToAppConfig()
+
         if (AppConfig.isDemoMode) {
             Log.d("PiDrive", "Demo mode active, scenario: ${AppConfig.demoScenario}")
+        } else if (AppConfig.isTcpMode) {
+            Log.d("PiDrive", "TCP mode active: ${AppConfig.tcpHost}:${AppConfig.tcpPort}")
         }
 
         super.onCreate(savedInstanceState)
@@ -103,6 +112,35 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         accelManager.stop()
+    }
+
+    /**
+     * Reads developer settings from SharedPreferences and, if any mode is active, overrides
+     * [AppConfig] before Hilt injection constructs the DI graph.
+     *
+     * This must be called before `super.onCreate()`. It reads the SharedPreferences file
+     * directly (bypassing the Hilt singleton) because the singleton is not yet constructed.
+     * The file is the same one [DevSettingsManager] reads and writes at runtime.
+     */
+    private fun applyDevSettingsToAppConfig() {
+        val prefs = getSharedPreferences(DevSettingsManager.PREFS_NAME, MODE_PRIVATE)
+        val devDemoMode = prefs.getBoolean("demo_mode", false)
+        val devTcpMode  = prefs.getBoolean("tcp_mode", false)
+        if (!devDemoMode && !devTcpMode) return  // no override — use intent extras
+
+        AppConfig.isDemoMode = devDemoMode
+        AppConfig.isTcpMode  = devTcpMode
+        if (devDemoMode) {
+            val scenarioName = prefs.getString("demo_scenario", "CRUISE") ?: "CRUISE"
+            AppConfig.demoScenario = DemoScenario.entries
+                .find { it.name == scenarioName.uppercase() }
+                ?: DemoScenario.CRUISE
+        }
+        if (devTcpMode) {
+            AppConfig.tcpHost = prefs.getString("tcp_host", DevSettingsManager.DEFAULT_TCP_HOST)
+                ?: DevSettingsManager.DEFAULT_TCP_HOST
+            AppConfig.tcpPort = prefs.getInt("tcp_port", DevSettingsManager.DEFAULT_TCP_PORT)
+        }
     }
 
     /**

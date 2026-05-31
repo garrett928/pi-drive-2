@@ -76,6 +76,7 @@ import ghart.space.pi_drive.shared.ui.components.PillStyle
 import ghart.space.pi_drive.shared.ui.theme.AccentOptions
 import ghart.space.pi_drive.shared.ui.theme.PiDriveTheme
 import ghart.space.pi_drive.ui.navigation.NavRoutes
+import ghart.space.pi_drive.ui.viewmodel.DevSettingsViewModel
 import ghart.space.pi_drive.ui.viewmodel.SettingsViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -105,13 +106,16 @@ private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM
 @Composable
 fun SettingsScreen(navController: NavController) {
     val viewModel: SettingsViewModel = hiltViewModel()
+    val devViewModel: DevSettingsViewModel = hiltViewModel()
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
     val manualTripState by viewModel.manualTripState.collectAsStateWithLifecycle()
     val generalSettings by viewModel.generalSettings.collectAsStateWithLifecycle()
     val telemetryConfig by viewModel.telemetryConfig.collectAsStateWithLifecycle()
+    val devSettings by devViewModel.settings.collectAsStateWithLifecycle()
 
     var showRetentionDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+    var versionTapCount by remember { mutableStateOf(0) }
 
     Column(
         modifier = Modifier
@@ -212,7 +216,35 @@ fun SettingsScreen(navController: NavController) {
         }
 
         SettingsSection(title = "App") {
-            AboutRow()
+            AboutRow(
+                tapCount = versionTapCount,
+                isDevUnlocked = devSettings.isDevUnlocked,
+                onTap = {
+                    if (devSettings.isDevUnlocked) {
+                        navController.navigate(NavRoutes.SETTINGS_DEV)
+                    } else {
+                        versionTapCount++
+                        if (versionTapCount >= 7) {
+                            devViewModel.unlock()
+                            versionTapCount = 0
+                        }
+                    }
+                },
+            )
+            if (devSettings.isDevUnlocked) {
+                Divider()
+                PDRow(
+                    title = "Developer settings",
+                    subtitle = when {
+                        devSettings.isDemoMode -> "Demo mode: ${devSettings.demoScenario}"
+                        devSettings.isTcpMode  -> "TCP mode: ${devSettings.tcpHost}:${devSettings.tcpPort}"
+                        else                   -> "Bluetooth (production)"
+                    },
+                    leadingIcon = Icons.Rounded.Settings,
+                    onClick = { navController.navigate(NavRoutes.SETTINGS_DEV) },
+                    trailing = { ChevronIcon() },
+                )
+            }
             Divider()
             PDRow(
                 title = "Reset all settings",
@@ -528,17 +560,27 @@ private fun RetentionRow(currentDays: Int, onClick: () -> Unit) {
 // ── About row ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun AboutRow() {
+private fun AboutRow(
+    tapCount: Int,
+    isDevUnlocked: Boolean,
+    onTap: () -> Unit,
+) {
     val context = LocalContext.current
     val versionName = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "—"
     } catch (_: PackageManager.NameNotFoundException) {
         "—"
     }
+    val subtitle = when {
+        isDevUnlocked -> "Version $versionName · Developer mode"
+        tapCount in 1..6 -> "Version $versionName · ${7 - tapCount} more taps to unlock developer settings"
+        else -> "Version $versionName"
+    }
     PDRow(
         title = "About Pi Drive",
-        subtitle = "Version $versionName",
+        subtitle = subtitle,
         leadingIcon = Icons.Rounded.Info,
+        onClick = onTap,
     )
 }
 

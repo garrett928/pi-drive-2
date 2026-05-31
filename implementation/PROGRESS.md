@@ -5,8 +5,8 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 10 -- Polish
-**Active step:** 10.1 -- Android Auto layout settings
-**Project state:** Phase 9 complete. AAAlertHandler (CarToast on DrivingEvent/HealthAlert, per-type 10s cooldown, aaToastEnabled gate from DetectionConfig, internal pure functions buildAAToastMessage/shouldShowAAToast/alertKeyForAA). All four AA screens fully implemented: DialsScreen, GraphsScreen, SplitPanelScreen, AAAlertHandler. AADataBridge singleton bridging Hilt→CarApp. 483 tests green (12 new AAAlertHandlerTest). Next: Android Auto layout settings.
+**Active step:** 10.3 -- End-to-end integration testing
+**Project state:** Step 10.2 complete. DevSettingsManager (SharedPrefs, StateFlow, unlock/reset/isAnyModeActive), DevSettingsViewModel (HiltVM), SettingsDevScreen (demo mode + TCP mode with host/port inputs, restart banner, status card), 7-tap version unlock in SettingsScreen (AboutRow), Developer settings row appears after unlock, MainActivity.applyDevSettingsToAppConfig() reads dev prefs before Hilt injection to override AppConfig. 513 tests green (15 new DevSettingsManagerTest). Next: end-to-end integration testing.
 
 ## Completed
 
@@ -44,6 +44,8 @@ Last updated: 2026-05-31
 | 9.2 | AA graphs screen | GraphsScreen (ListTemplate: throttle+g-force trend labels + instant MPG + manual trip stat), AAScreenManager (root screen factory, navigation graph documented), buildGraphsTemplateData pure function; 15 new tests, 456 total green |
 | 9.3 | AA split-screen panel | SplitPanelScreen (GridTemplate, page 1: instant MPG hero + 4 pills, page 2: 6 metric tiles), SplitPageManager (togglePage/showHero/showTiles, in-place invalidate); 15 new tests, 471 total green |
 | 9.4 | AA alerts + CarToast | AAAlertHandler (CarToast on DrivingEvent/HealthAlert, 10s per-type cooldown, aaToastEnabled gate), pure functions: buildAAToastMessage/shouldShowAAToast/alertKeyForAA, refactored for testability; 12 new tests, 483 total green |
+| 10.1 | Android Auto layout settings | AALayoutConfig (AAWidgetType, AASlotConfig, 4 default slot lists), AALayoutManager (SharedPrefs JSON, StateFlow, per-screen update/reset), AAMetricFormatter (formatSlotValueForAA/isDangerConditionForAA for all 16 MetricIds), AADataBridge extended with aaLayout StateFlow, DialsScreen/GraphsScreen/SplitPanelScreen use configurable slots, AALayoutViewModel (HiltVM), SettingsAALayoutScreen (3 tabs, previews, slot editor bottom sheet, reorder); 15 new tests, 498 total green |
+| 10.2 | TcpTransport + ELM327 emulator | DevSettingsManager (SharedPrefs, StateFlow, unlock/reset/isAnyModeActive), DevSettingsViewModel (HiltVM), SettingsDevScreen (demo mode + TCP mode host/port, restart banner, status card), 7-tap version unlock in SettingsScreen, MainActivity.applyDevSettingsToAppConfig() overrides AppConfig before Hilt injection; 15 new tests, 513 total green |
 
 ## Step Status
 
@@ -92,8 +94,8 @@ Last updated: 2026-05-31
 | 9.3 | AA split-screen panel | DONE | |
 | 9.4 | AA alerts + CarToast | DONE | |
 | **Phase 10: Polish** |
-| 10.1 | Android Auto layout settings | NOT STARTED | |
-| 10.2 | TcpTransport + ELM327 emulator | NOT STARTED | |
+| 10.1 | Android Auto layout settings | DONE | 49bd9e3 |
+| 10.2 | TcpTransport + ELM327 emulator | DONE | |
 | 10.3 | End-to-end integration testing | NOT STARTED | |
 | 10.4 | CI pipeline (GitHub Actions) | NOT STARTED | |
 

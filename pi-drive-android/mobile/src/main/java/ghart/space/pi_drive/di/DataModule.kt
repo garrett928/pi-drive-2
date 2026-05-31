@@ -29,6 +29,7 @@ import ghart.space.pi_drive.shared.obd.TcpTransport
 import ghart.space.pi_drive.shared.data.db.dao.PendingUploadDao
 import ghart.space.pi_drive.shared.settings.AALayoutManager
 import ghart.space.pi_drive.shared.settings.DashboardLayoutManager
+import ghart.space.pi_drive.shared.settings.DevSettingsManager
 import ghart.space.pi_drive.shared.settings.GeneralSettingsManager
 import ghart.space.pi_drive.shared.settings.ThresholdsManager
 import ghart.space.pi_drive.shared.telemetry.OfflineBuffer
@@ -278,6 +279,21 @@ object DataModule {
     fun provideAALayoutManager(@ApplicationContext context: Context): AALayoutManager =
         AALayoutManager(
             context.getSharedPreferences(AALayoutManager.PREFS_NAME, Context.MODE_PRIVATE)
+        )
+
+    /**
+     * Provides the [DevSettingsManager] that persists developer settings to SharedPreferences.
+     *
+     * Developer settings allow switching between TCP emulator mode, demo mode, and Bluetooth
+     * without re-launching via adb. The developer screen is hidden behind a 7-tap unlock.
+     * [MainActivity] reads from this same SharedPreferences file (before Hilt injection) to
+     * apply the settings to [AppConfig] on the next launch.
+     */
+    @Provides
+    @Singleton
+    fun provideDevSettingsManager(@ApplicationContext context: Context): DevSettingsManager =
+        DevSettingsManager(
+            context.getSharedPreferences(DevSettingsManager.PREFS_NAME, Context.MODE_PRIVATE)
         )
 
     /**
