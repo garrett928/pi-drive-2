@@ -5,8 +5,8 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 9 -- Android Auto
-**Active step:** 9.2 -- AA Screen 2 -- Graphs
-**Project state:** Step 9.1 complete. AADataBridge (singleton bridging Hilt→CarApp; bind() called from MainActivity), DialsScreen (GridTemplate 6-item: speed/RPM/coolant dials + trip dist/MPG/battery stats, ActionStrip for Graphs/Panel nav), PiDriveCarAppService/PiDriveCarAppSession (rename from My*), AAAlertHandler stub, GraphsScreen/SplitPanelScreen/SplitPageManager stubs. Manifest updated. 441 tests green. Next: flesh out GraphsScreen.
+**Active step:** 9.3 -- AA Split-Screen Panel
+**Project state:** Steps 9.1-9.2 complete. AAScreenManager added as root-screen factory; PiDriveCarAppSession delegates to it. GraphsScreen (ListTemplate: throttle + g-force + instant MPG + manual trip stat with trend indicators), buildGraphsTemplateData pure function. 456 tests green (15 new GraphsScreenTest). Next: SplitPanelScreen tests.
 
 ## Completed
 
@@ -84,7 +84,7 @@ Last updated: 2026-05-31
 | 8.4 | Trip history screen + CSV export | DONE | 238034a |
 | **Phase 9: Android Auto** |
 | 9.1 | AA Screen 1 -- Dials | DONE | |
-| 9.2 | AA Screen 2 -- Graphs | NOT STARTED | |
+| 9.2 | AA Screen 2 -- Graphs | DONE | |
 | 9.3 | AA split-screen panel | NOT STARTED | |
 | 9.4 | AA alerts + CarToast | NOT STARTED | |
 | **Phase 10: Polish** |

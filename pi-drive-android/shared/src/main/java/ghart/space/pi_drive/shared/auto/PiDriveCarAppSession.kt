@@ -25,9 +25,8 @@ class PiDriveCarAppSession : Session() {
     private var alertHandler: AAAlertHandler? = null
 
     override fun onCreateScreen(intent: Intent): Screen {
-        Log.d(TAG, "CarAppSession: onCreateScreen — launching DialsScreen")
-        // Initialize the alert handler here so it shares the session's lifecycle.
+        Log.d(TAG, "CarAppSession: onCreateScreen — launching DialsScreen via AAScreenManager")
         alertHandler = AAAlertHandler(carContext = carContext, lifecycleOwner = this)
-        return DialsScreen(carContext)
+        return AAScreenManager(carContext).createRootScreen()
     }
 }
