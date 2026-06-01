@@ -1,0 +1,149 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ── Job 1: Unit tests ──────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        id: setup-java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant gradlew execute permission
+        run: chmod +x pi-drive-android/gradlew
+
+      - name: Run unit tests
+        working-directory: pi-drive-android
+        # Override org.gradle.java.home so the macOS-local path in
+        # gradle.properties doesn't break the Linux CI runner.
+        run: ./gradlew :shared:test :mobile:test -Dorg.gradle.java.home=$JAVA_HOME
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: '**/build/test-results/**/*.xml'
+          retention-days: 7
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: '**/build/reports/tests/**'
+          retention-days: 7
+
+  # ── Job 2: Integration tests with ELM327 emulator ─────────────────────────
+  integration-tests:
+    name: OBD Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        id: setup-java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Set up Python for ELM327 emulator
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ELM327 emulator
+        run: pip install ELM327-emulator
+
+      - name: Start ELM327 emulator in background
+        run: |
+          python3 -m elm -n 35000 -s car &
+          echo "ELM327_PID=$!" >> $GITHUB_ENV
+
+      - name: Wait for emulator to start
+        run: sleep 3
+
+      - name: Grant gradlew execute permission
+        run: chmod +x pi-drive-android/gradlew
+
+      - name: Run shared module tests with OBD port
+        working-directory: pi-drive-android
+        run: >
+          ./gradlew :shared:test
+          -Pobd.test.port=35000
+          -Dorg.gradle.java.home=$JAVA_HOME
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+
+      - name: Stop ELM327 emulator
+        if: always()
+        run: |
+          if [[ -n "$ELM327_PID" ]]; then
+            kill "$ELM327_PID" 2>/dev/null || true
+          fi
+
+      - name: Upload integration test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: '**/build/test-results/**/*.xml'
+          retention-days: 7
+
+  # ── Job 3: Build verification ──────────────────────────────────────────────
+  build:
+    name: Build APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        id: setup-java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant gradlew execute permission
+        run: chmod +x pi-drive-android/gradlew
+
+      - name: Build debug APKs
+        working-directory: pi-drive-android
+        run: >
+          ./gradlew :mobile:assembleDebug :automotive:assembleDebug
+          -Dorg.gradle.java.home=$JAVA_HOME
+        env:
+          JAVA_HOME: ${{ steps.setup-java.outputs.path }}
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apks
+          path: |
+            mobile/build/outputs/apk/debug/*.apk
+            automotive/build/outputs/apk/debug/*.apk
+          retention-days: 14

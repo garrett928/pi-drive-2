@@ -5,8 +5,8 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 10 -- Polish
-**Active step:** 10.4 -- CI pipeline (GitHub Actions)
-**Project state:** Step 10.3 complete. scripts/e2e-test.sh (6-scenario runner with build/unit-test/install/screenshot/logcat verification), FullPipelineTest (4 JVM tests: init sequence → data source → snapshots + AccelerationDetector event detection), DashboardE2ETest / NavigationE2ETest / ThresholdChangeE2ETest (instrumented Compose UI tests with SharedPrefs demo-mode setup). compose-ui-test-junit4 added. 517 tests green (4 new). Next: CI pipeline.
+**Active step:** COMPLETE — all Phase 10 steps done. Next: Phase 11 (to be defined)
+**Project state:** Step 10.4 complete. .github/workflows/test.yml (unit-tests + integration-tests + build jobs), .github/workflows/pr.yml (lint + build-check + unit-tests jobs), ELM327IntegrationTest.kt (2 tests: TCP connect+init, snapshot delivery; skip gracefully without obd.test.port), shared/build.gradle.kts updated to forward obd.test.port Gradle property to JVM. 519 tests green (2 new). Phase 10 complete!
 
 ## Completed
 
@@ -47,6 +47,7 @@ Last updated: 2026-05-31
 | 10.1 | Android Auto layout settings | AALayoutConfig (AAWidgetType, AASlotConfig, 4 default slot lists), AALayoutManager (SharedPrefs JSON, StateFlow, per-screen update/reset), AAMetricFormatter (formatSlotValueForAA/isDangerConditionForAA for all 16 MetricIds), AADataBridge extended with aaLayout StateFlow, DialsScreen/GraphsScreen/SplitPanelScreen use configurable slots, AALayoutViewModel (HiltVM), SettingsAALayoutScreen (3 tabs, previews, slot editor bottom sheet, reorder); 15 new tests, 498 total green |
 | 10.2 | TcpTransport + ELM327 emulator | DevSettingsManager (SharedPrefs, StateFlow, unlock/reset/isAnyModeActive), DevSettingsViewModel (HiltVM), SettingsDevScreen (demo mode + TCP mode host/port, restart banner, status card), 7-tap version unlock in SettingsScreen, MainActivity.applyDevSettingsToAppConfig() overrides AppConfig before Hilt injection; 15 new tests, 513 total green |
 | 10.3 | End-to-end integration testing | scripts/e2e-test.sh (6-scenario runner), FullPipelineTest (4 JVM tests: init→dataSource→AccelerationDetector pipeline), DashboardE2ETest + NavigationE2ETest + ThresholdChangeE2ETest (Compose UI instrumented tests), compose-ui-test-junit4 added; 4 new tests, 517 total green |
+| 10.4 | CI pipeline (GitHub Actions) | .github/workflows/test.yml (unit-tests + OBD integration + build jobs), .github/workflows/pr.yml (lint + build-check + unit-tests), ELM327IntegrationTest (2 tests skip gracefully without port), shared/build.gradle.kts obd.test.port forwarding; 2 new tests, 519 total green |
 
 ## Step Status
 
@@ -97,8 +98,8 @@ Last updated: 2026-05-31
 | **Phase 10: Polish** |
 | 10.1 | Android Auto layout settings | DONE | 49bd9e3 |
 | 10.2 | TcpTransport + ELM327 emulator | DONE | 9ad92a6 |
-| 10.3 | End-to-end integration testing | DONE | |
-| 10.4 | CI pipeline (GitHub Actions) | NOT STARTED | |
+| 10.3 | End-to-end integration testing | DONE | 4ae66de |
+| 10.4 | CI pipeline (GitHub Actions) | DONE | |
 
 ## Notes
 

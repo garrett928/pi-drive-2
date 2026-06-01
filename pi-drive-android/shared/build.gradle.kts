@@ -34,6 +34,15 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
+            all { test ->
+                // Forward obd.test.port Gradle property → JVM system property so
+                // ELM327IntegrationTest can discover it with System.getProperty().
+                // Usage: ./gradlew :shared:test -Pobd.test.port=35000
+                val obdPort = project.findProperty("obd.test.port")?.toString()
+                if (obdPort != null) {
+                    test.systemProperty("obd.test.port", obdPort)
+                }
+            }
         }
     }
 }
