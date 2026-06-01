@@ -5,8 +5,8 @@ Last updated: 2026-05-31
 ## Current State
 
 **Active phase:** Phase 11 -- Release Readiness
-**Active step:** 11.2 -- Runtime permissions onboarding
-**Project state:** Step 11.1 complete. ic_launcher_foreground.xml (π glyph in #D88A30 warm orange, geometric bold path on 108×108 canvas), ic_launcher_background.xml (#201D19 dark bg), core-splashscreen 1.0.1 added, Theme.PiDrive.Splash in themes.xml (windowSplashScreenBackground/AnimatedIcon/postSplashScreenTheme), AndroidManifest activity theme → splash theme, MainActivity.installSplashScreen() before super.onCreate(). 519 tests green. Next: permissions onboarding.
+**Active step:** 11.3 -- Release build configuration
+**Project state:** Step 11.2 complete. PermissionState (sealed class: Granted/ShowRationale/PermanentlyDenied/NotRequested), BluetoothPermissionManager + rememberBluetoothPermissionManager (BT permission check + system dialog launcher), ExplainPermissionsSheet + PermanentlyDeniedSheet (ModalBottomSheet UI), PermissionGate (Composable wrapper), ConnectScanScreen refactored to use new permission stack. 527 tests green (8 new PermissionStateTest). Next: release build config.
 
 ## Completed
 
@@ -49,6 +49,7 @@ Last updated: 2026-05-31
 | 10.3 | End-to-end integration testing | scripts/e2e-test.sh (6-scenario runner), FullPipelineTest (4 JVM tests: init→dataSource→AccelerationDetector pipeline), DashboardE2ETest + NavigationE2ETest + ThresholdChangeE2ETest (Compose UI instrumented tests), compose-ui-test-junit4 added; 4 new tests, 517 total green |
 | 10.4 | CI pipeline (GitHub Actions) | .github/workflows/test.yml (unit-tests + OBD integration + build jobs), .github/workflows/pr.yml (lint + build-check + unit-tests), ELM327IntegrationTest (2 tests skip gracefully without port), shared/build.gradle.kts obd.test.port forwarding; 2 new tests, 519 total green |
 | 11.1 | App icon + splash screen | ic_launcher_foreground.xml (π glyph, #D88A30 warm orange), ic_launcher_background.xml (#201D19), core-splashscreen 1.0.1, Theme.PiDrive.Splash theme, MainActivity.installSplashScreen(); 519 tests green |
+| 11.2 | Runtime permissions onboarding | PermissionState sealed class, BluetoothPermissionManager + rememberBluetoothPermissionManager, ExplainPermissionsSheet + PermanentlyDeniedSheet, PermissionGate composable, ConnectScanScreen refactored; 527 tests green (8 new) |
 
 ## Step Status
 
@@ -102,8 +103,8 @@ Last updated: 2026-05-31
 | 10.3 | End-to-end integration testing | DONE | 4ae66de |
 | 10.4 | CI pipeline (GitHub Actions) | DONE | 4803db6 |
 | **Phase 11: Release Readiness** |
-| 11.1 | App icon + splash screen | DONE | |
-| 11.2 | Runtime permissions onboarding | NOT STARTED | |
+| 11.1 | App icon + splash screen | DONE | 19ee892 |
+| 11.2 | Runtime permissions onboarding | DONE | |
 | 11.3 | Release build configuration | NOT STARTED | |
 
 ## Notes

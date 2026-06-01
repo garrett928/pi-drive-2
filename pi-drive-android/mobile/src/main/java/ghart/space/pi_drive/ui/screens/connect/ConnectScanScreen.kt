@@ -1,12 +1,15 @@
 package ghart.space.pi_drive.ui.screens.connect
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import ghart.space.pi_drive.ui.permissions.ExplainPermissionsSheet
+import ghart.space.pi_drive.ui.permissions.PermissionState
+import ghart.space.pi_drive.ui.permissions.PermanentlyDeniedSheet
+import ghart.space.pi_drive.ui.permissions.rememberBluetoothPermissionManager
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -47,7 +50,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -80,29 +82,53 @@ fun ConnectScanScreen(
     val context = LocalContext.current
     val devices by viewModel.devices.collectAsStateWithLifecycle()
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-    ) { result ->
-        if (result.values.all { it }) {
-            viewModel.loadBondedDevices()
-        }
+    // ── Permission handling (skipped in demo mode) ────────────────────────────
+    var permissionState by remember {
+        mutableStateOf<PermissionState>(PermissionState.NotRequested)
+    }
+    val permManager = rememberBluetoothPermissionManager { result ->
+        permissionState = result
+        if (result == PermissionState.Granted) viewModel.loadBondedDevices()
     }
 
     LaunchedEffect(Unit) {
-        if (AppConfig.isDemoMode) return@LaunchedEffect
-        val hasBtConnect = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
-        if (hasBtConnect) {
+        if (AppConfig.isDemoMode) {
             viewModel.loadBondedDevices()
-        } else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
+            return@LaunchedEffect
+        }
+        val current = permManager.currentState()
+        permissionState = current
+        when (current) {
+            PermissionState.Granted -> viewModel.loadBondedDevices()
+            PermissionState.NotRequested,
+            PermissionState.ShowRationale -> { /* show rationale sheet via state */ }
+            PermissionState.PermanentlyDenied -> { /* show go-to-settings sheet */ }
+        }
+    }
+
+    // Permission sheets shown as overlays when not in demo mode
+    if (!AppConfig.isDemoMode) {
+        when (permissionState) {
+            PermissionState.ShowRationale, PermissionState.NotRequested -> {
+                ExplainPermissionsSheet(
+                    onAllow = { permManager.requestPermissions() },
+                    onDismiss = { permissionState = permManager.currentState() },
                 )
-            )
+            }
+            PermissionState.PermanentlyDenied -> {
+                PermanentlyDeniedSheet(
+                    onOpenSettings = {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = android.net.Uri.fromParts("package", context.packageName, null)
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                        )
+                    },
+                    onDismiss = { permissionState = permManager.currentState() },
+                )
+            }
+            PermissionState.Granted -> { /* no overlay */ }
         }
     }
 
