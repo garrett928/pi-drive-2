@@ -26,6 +26,7 @@ androidxTestCore = "1.6.1"
 appProjected = "1.4.0"
 appAutomotive = "1.7.0"
 app = "1.4.0"
+coreSplashscreen = "1.0.1"
 
 [libraries]
 # AndroidX Core
@@ -91,6 +92,7 @@ turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
+core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -53,6 +53,7 @@ dependencies {
     implementation(project(":shared"))
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.core.splashscreen)
     implementation(libs.material)
 
     // Compose BOM — all compose-* versions come from here

@@ -6,4 +6,16 @@
     </style>
 
     <style name="Theme.Pidrive" parent="Base.Theme.Pidrive" />
+
+    <!--
+      Splash screen theme applied to MainActivity via android:theme in the manifest.
+      The SplashScreen API reads these attributes on Android 12+.
+      postSplashScreenTheme transitions to Theme.Pidrive after splash exits.
+    -->
+    <style name="Theme.PiDrive.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/pd_bg_dark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/pd_bg_dark</item>
+        <item name="postSplashScreenTheme">@style/Theme.Pidrive</item>
+    </style>
 </resources>

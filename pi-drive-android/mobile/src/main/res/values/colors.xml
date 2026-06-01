@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Pi Drive design tokens (dark theme) — used by splash screen XML theme -->
+    <color name="pd_bg_dark">#201D19</color>
+    <color name="pd_accent_orange">#D88A30</color>
 </resources>

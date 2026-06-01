@@ -3,6 +3,7 @@ package ghart.space.pi_drive
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
@@ -70,6 +71,10 @@ class MainActivity : ComponentActivity() {
     @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install the SplashScreen FIRST — must precede super.onCreate() so the
+        // system can show the π-glyph splash during Hilt injection.
+        installSplashScreen()
+
         // Parse extras BEFORE super.onCreate() so Hilt reads AppConfig when
         // building the DI graph — injection happens during super.onCreate().
         // Intent extras set the base mode; developer settings may override them below.
