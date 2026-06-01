@@ -4,9 +4,9 @@ Last updated: 2026-05-31
 
 ## Current State
 
-**Active phase:** Phase 11 -- Release Readiness
-**Active step:** 11.3 -- Release build configuration
-**Project state:** Step 11.2 complete. PermissionState (sealed class: Granted/ShowRationale/PermanentlyDenied/NotRequested), BluetoothPermissionManager + rememberBluetoothPermissionManager (BT permission check + system dialog launcher), ExplainPermissionsSheet + PermanentlyDeniedSheet (ModalBottomSheet UI), PermissionGate (Composable wrapper), ConnectScanScreen refactored to use new permission stack. 527 tests green (8 new PermissionStateTest). Next: release build config.
+**Active phase:** Phase 11 -- Release Readiness -- COMPLETE
+**Active step:** 12.1 -- Play Store listing preparation (Phase 12 next)
+**Project state:** Step 11.3 complete. proguard-rules.pro (kotlinx.serialization, OkHttp, Room, Hilt, WorkManager, Car App, Kotlin keeps + dontwarn), mobile/build.gradle.kts release: isMinifyEnabled=true + isShrinkResources=true, releaseSmoke Gradle task (assembleRelease + size check → 7.4 MB), CI test.yml release-smoke job added, SIGNING.md (keystore creation, env var config, CI signing instructions). Phase 11 complete! 527 tests green. Next: Phase 12 (Play Store listing).
 
 ## Completed
 
@@ -50,6 +50,7 @@ Last updated: 2026-05-31
 | 10.4 | CI pipeline (GitHub Actions) | .github/workflows/test.yml (unit-tests + OBD integration + build jobs), .github/workflows/pr.yml (lint + build-check + unit-tests), ELM327IntegrationTest (2 tests skip gracefully without port), shared/build.gradle.kts obd.test.port forwarding; 2 new tests, 519 total green |
 | 11.1 | App icon + splash screen | ic_launcher_foreground.xml (π glyph, #D88A30 warm orange), ic_launcher_background.xml (#201D19), core-splashscreen 1.0.1, Theme.PiDrive.Splash theme, MainActivity.installSplashScreen(); 519 tests green |
 | 11.2 | Runtime permissions onboarding | PermissionState sealed class, BluetoothPermissionManager + rememberBluetoothPermissionManager, ExplainPermissionsSheet + PermanentlyDeniedSheet, PermissionGate composable, ConnectScanScreen refactored; 527 tests green (8 new) |
+| 11.3 | Release build configuration | proguard-rules.pro (Serialization/OkHttp/Room/Hilt/WorkManager/CarApp keeps), release: isMinifyEnabled+isShrinkResources, releaseSmoke task (7.4 MB APK), CI release-smoke job, SIGNING.md; 527 tests green |
 
 ## Step Status
 
@@ -104,8 +105,12 @@ Last updated: 2026-05-31
 | 10.4 | CI pipeline (GitHub Actions) | DONE | 4803db6 |
 | **Phase 11: Release Readiness** |
 | 11.1 | App icon + splash screen | DONE | 19ee892 |
-| 11.2 | Runtime permissions onboarding | DONE | |
-| 11.3 | Release build configuration | NOT STARTED | |
+| 11.2 | Runtime permissions onboarding | DONE | 5a4ef8b |
+| 11.3 | Release build configuration | DONE | |
+| **Phase 12: Distribution & Monitoring** |
+| 12.1 | Play Store listing preparation | NOT STARTED | |
+| 12.2 | Firebase Crashlytics integration | NOT STARTED | |
+| 12.3 | Beta testing setup | NOT STARTED | |
 
 ## Notes
 

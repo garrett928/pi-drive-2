@@ -29,11 +29,14 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Signing placeholder — configure a signingConfig before publishing.
+            // See SIGNING.md for instructions on creating and wiring a keystore.
         }
     }
 
@@ -94,4 +97,25 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(composeBom)
     androidTestImplementation(libs.compose.ui.test.junit4)
+}
+
+// ── Release smoke test ────────────────────────────────────────────────────────
+// Run with: ./gradlew :mobile:releaseSmoke
+// Verifies the release APK assembles cleanly (minify + R8 rules are correct).
+// Does not sign the APK — configure a signingConfig first for a signed build.
+tasks.register("releaseSmoke") {
+    dependsOn("assembleRelease")
+    doLast {
+        val apkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
+        val apks = apkDir.listFiles { f -> f.extension == "apk" } ?: emptyArray()
+        if (apks.isEmpty()) {
+            throw GradleException("releaseSmoke: no APK found in $apkDir")
+        }
+        val apk = apks.first()
+        val sizeMb = apk.length() / (1024.0 * 1024.0)
+        println("✓ Release APK: ${apk.name}  (${String.format("%.1f", sizeMb)} MB)")
+        if (sizeMb > 50.0) {
+            logger.warn("WARNING: release APK is ${String.format("%.1f", sizeMb)} MB — consider investigating size")
+        }
+    }
 }
