@@ -1,6 +1,6 @@
 # Pi Drive -- Master Implementation Plan
 
-11 phases, 33 steps. Each step is one PR (~1k-5k lines, 30-60 min).
+13 phases, 42 steps. Each step is one PR (~1k-5k lines, 30-60 min).
 See `PROGRESS.md` for current state. Load individual `phase-NN-*.md` for step details.
 
 ## Dependency Graph
@@ -28,6 +28,12 @@ Phase 4: BT    Phase 5: Detection  Phase 6: Trips
           │
           v
      Phase 10: Polish + Integration
+          │
+          v
+     Phase 11: Release Readiness
+          │
+          v
+     Phase 12: Distribution & Monitoring
 ```
 
 ## Phase Overview
@@ -45,6 +51,8 @@ Phase 4: BT    Phase 5: Detection  Phase 6: Trips
 | **8** | `phase-08-settings.md` | 8.1 - 8.4 | All settings screens + trip history |
 | **9** | `phase-09-android-auto.md` | 9.1 - 9.4 | AA dials, graphs, split-screen, CarToast alerts |
 | **10** | `phase-10-polish.md` | 10.1 - 10.4 | TCP transport, E2E integration, CI pipeline |
+| **11** | `phase-11-release-readiness.md` | 11.1 - 11.3 | App icon + splash, permissions onboarding, release build config |
+| **12** | `phase-12-distribution.md` | 12.1 - 12.3 | Play Store listing, Crashlytics, beta testing |
 
 ## Conventions
 

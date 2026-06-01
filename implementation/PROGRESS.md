@@ -4,9 +4,9 @@ Last updated: 2026-05-31
 
 ## Current State
 
-**Active phase:** Phase 10 -- Polish
-**Active step:** COMPLETE — all Phase 10 steps done. Next: Phase 11 (to be defined)
-**Project state:** Step 10.4 complete. .github/workflows/test.yml (unit-tests + integration-tests + build jobs), .github/workflows/pr.yml (lint + build-check + unit-tests jobs), ELM327IntegrationTest.kt (2 tests: TCP connect+init, snapshot delivery; skip gracefully without obd.test.port), shared/build.gradle.kts updated to forward obd.test.port Gradle property to JVM. 519 tests green (2 new). Phase 10 complete!
+**Active phase:** Phase 11 -- Release Readiness
+**Active step:** 11.1 -- App icon + splash screen
+**Project state:** Phase 10 complete. Step 10.4 delivered .github/workflows/test.yml (unit-tests + OBD integration + build jobs), .github/workflows/pr.yml (lint + build-check + unit-tests), ELM327IntegrationTest (2 tests skip gracefully without port), shared/build.gradle.kts obd.test.port forwarding. 519 tests green. Phase 11 begins: app icon + splash screen.
 
 ## Completed
 
@@ -99,7 +99,11 @@ Last updated: 2026-05-31
 | 10.1 | Android Auto layout settings | DONE | 49bd9e3 |
 | 10.2 | TcpTransport + ELM327 emulator | DONE | 9ad92a6 |
 | 10.3 | End-to-end integration testing | DONE | 4ae66de |
-| 10.4 | CI pipeline (GitHub Actions) | DONE | |
+| 10.4 | CI pipeline (GitHub Actions) | DONE | 4803db6 |
+| **Phase 11: Release Readiness** |
+| 11.1 | App icon + splash screen | NOT STARTED | |
+| 11.2 | Runtime permissions onboarding | NOT STARTED | |
+| 11.3 | Release build configuration | NOT STARTED | |
 
 ## Notes
 
