@@ -41,6 +41,11 @@
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.IOT" />
             </intent-filter>
+            <!-- Required: declares the minimum Car App Library API level this app supports.
+                 Without this, Android Auto will not recognize the app as compatible. -->
+            <meta-data
+                android:name="androidx.car.app.minCarApiLevel"
+                android:value="1" />
         </service>
 
         <service

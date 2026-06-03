@@ -54,6 +54,13 @@ class ConnectionManager(
     private var reconnectJob: Job? = null
     private var monitorJob: Job? = null
 
+    /**
+     * The set of Mode 01 PIDs reported as supported by the currently connected vehicle's ECU.
+     * Empty when not connected. Populated by [acceptReadyTransport] and [doConnect].
+     */
+    var activeSupportedPids: Set<Int> = emptySet()
+        private set
+
     // ── Public API ───────────────────────────────────────────────────────────
 
     /**
@@ -107,10 +114,51 @@ class ConnectionManager(
         monitorJob?.cancel()
         val t = currentTransport
         currentTransport = null
+        activeSupportedPids = emptySet()
         t?.let { scope.launch { it.disconnect() } }
         _connectionState.value = ConnectionState.Disconnected()
         Log.i("PiDrive", "ConnectionManager: disconnected cleanly")
     }
+
+    /**
+     * Accepts a transport that has already been connected and initialized by [ConnectViewModel],
+     * skipping the initialization sequence. Immediately transitions [connectionState] to
+     * [ConnectionState.Connected] and starts monitoring for disconnects.
+     *
+     * This is called after the user completes the Connect screen flow so the dashboard
+     * banner and reconnect logic reflect the live Bluetooth connection.
+     *
+     * @param address   Bluetooth MAC address of the adapter.
+     * @param transport An already-connected, ELM327-initialized [OBDTransport].
+     * @param result    The [InitResult] produced by [InitializationSequence].
+     */
+    fun acceptReadyTransport(address: String, transport: OBDTransport, result: InitResult) {
+        deviceAddress = address
+        reconnectJob?.cancel()
+        monitorJob?.cancel()
+        currentTransport = transport
+        activeSupportedPids = result.supportedPids
+        _connectionState.value = ConnectionState.Connected(
+            adapterName = address,
+            protocol = result.protocol ?: "Unknown",
+            pollRateHz = 0f,
+        )
+        Log.i("PiDrive", "ConnectionManager: accepted ready transport for $address, " +
+            "protocol=${result.protocol}, pids=${result.supportedPids.size}")
+        monitorJob = scope.launch {
+            transport.isConnected.collect { connected ->
+                if (!connected && _connectionState.value is ConnectionState.Connected) {
+                    Log.i("PiDrive", "ConnectionManager: transport dropped — starting reconnect loop")
+                    currentTransport = null
+                    activeSupportedPids = emptySet()
+                    startReconnectLoop(startTime = clock())
+                }
+            }
+        }
+    }
+
+    /** Returns the currently active [OBDTransport], or null if not connected. */
+    fun getActiveTransport(): OBDTransport? = currentTransport
 
     // ── Private helpers ──────────────────────────────────────────────────────
 
@@ -133,6 +181,7 @@ class ConnectionManager(
             }
             val result = initResult ?: return false
 
+            activeSupportedPids = result.supportedPids
             _connectionState.value = ConnectionState.Connected(
                 adapterName = address,
                 protocol = result.protocol ?: "Unknown",

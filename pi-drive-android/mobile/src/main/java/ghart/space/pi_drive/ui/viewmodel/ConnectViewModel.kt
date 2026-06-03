@@ -9,7 +9,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ghart.space.pi_drive.di.AppConfig
+import ghart.space.pi_drive.shared.data.OBDVehicleDataSource
+import ghart.space.pi_drive.shared.data.VehicleDataSource
 import ghart.space.pi_drive.shared.obd.BluetoothTransport
+import ghart.space.pi_drive.shared.obd.ConnectionManager
 import ghart.space.pi_drive.shared.obd.InitResult
 import ghart.space.pi_drive.shared.obd.InitStep
 import ghart.space.pi_drive.shared.obd.InitializationSequence
@@ -184,6 +187,8 @@ private fun buildInitialSteps(): List<InitStepItem> = listOf(
 @HiltViewModel
 class ConnectViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val connectionManager: ConnectionManager,
+    private val vehicleDataSource: VehicleDataSource,
 ) : ViewModel() {
 
     val coordinator = ConnectCoordinator()
@@ -239,7 +244,10 @@ class ConnectViewModel @Inject constructor(
 
     /**
      * Starts the connect + initialization flow for the device selected via [selectDevice].
-     * No-op if no device has been selected.
+     *
+     * On success, hands the fully-initialized transport to [ConnectionManager] (for reconnect
+     * lifecycle and the dashboard banner state) and to [OBDVehicleDataSource] (to start live
+     * OBD polling). No-op if no device has been selected.
      */
     fun startInitialization() {
         val address = selectedAddress ?: return
@@ -249,6 +257,21 @@ class ConnectViewModel @Inject constructor(
                 return@launch
             }
             coordinator.connect(transport)
+
+            // Hand off the ready transport to the data layer (non-demo mode only).
+            // In demo mode the VehicleDataSource is already running on MockTransport.
+            if (!AppConfig.isDemoMode) {
+                val result = coordinator.initResult.value ?: return@launch
+                connectionManager.acceptReadyTransport(address, transport, result)
+                (vehicleDataSource as? OBDVehicleDataSource)?.reconnectWith(
+                    transport = transport,
+                    supportedPids = result.supportedPids,
+                    adapterName = address,
+                    protocol = result.protocol ?: "Auto",
+                )
+                Log.i("PiDrive", "ConnectViewModel: handed off transport to data layer — " +
+                    "address=$address, pids=${result.supportedPids.size}")
+            }
         }
     }
 

@@ -103,8 +103,17 @@ class LiveDashboardViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** True when the adapter is in [ConnectionState.Connected] state. */
-    val isLive: StateFlow<Boolean> = dataSource.connectionState
+    /**
+     * True when the adapter is in [ConnectionState.Connected] state.
+     *
+     * In demo mode, driven by [VehicleDataSource.connectionState] (simulated).
+     * In production, driven by [ConnectionManager.connectionState] — becomes true only
+     * after the user completes the Connect screen and the transport is handed off.
+     */
+    val isLive: StateFlow<Boolean> = (
+        if (AppConfig.isDemoMode) dataSource.connectionState
+        else connectionManager.connectionState
+    )
         .map { it is ConnectionState.Connected }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 

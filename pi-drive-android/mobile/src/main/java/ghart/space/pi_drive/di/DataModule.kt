@@ -124,16 +124,21 @@ object DataModule {
                 coroutineScope = scope,
             )
         }
-        // Phase 4: swap MockTransport for TcpTransport or BluetoothTransport,
-        // and run InitializationSequence to populate real supported PIDs.
-        val transport = MockTransport()
-        return OBDVehicleDataSource(
-            transport = transport,
-            initialSupportedPids = setOf(0x05, 0x0C, 0x0D, 0x0F, 0x10, 0x11, 0x2F, 0x5C, 0x5E),
-            coroutineScope = scope,
-            adapterName = "Mock Adapter",
-            protocol = "Simulated",
-        )
+        if (AppConfig.isTcpMode) {
+            // TCP emulator mode: connect immediately with a pre-wired transport so the
+            // dashboard starts polling without requiring the user to go through ConnectScreen.
+            val transport = TcpTransport(AppConfig.tcpHost, AppConfig.tcpPort)
+            return OBDVehicleDataSource(
+                transport = transport,
+                initialSupportedPids = setOf(0x05, 0x0C, 0x0D, 0x0F, 0x10, 0x11, 0x2F, 0x5C, 0x5E),
+                coroutineScope = scope,
+                adapterName = "TCP Emulator",
+                protocol = "Simulated",
+            )
+        }
+        // Bluetooth mode: transport is null until the user completes the Connect screen flow.
+        // ConnectViewModel calls OBDVehicleDataSource.reconnectWith() after initialization.
+        return OBDVehicleDataSource(coroutineScope = scope)
     }
 
     /**
