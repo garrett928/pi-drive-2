@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- It indicates that it requires a template host -->
+    <!--
+        Declare the template host feature so AAOS can route this app to the
+        correct rendering layer. android.hardware.type.automotive restricts
+        distribution to cars only.
+    -->
     <uses-feature
         android:name="android.software.car.templates_host"
         android:required="true" />
@@ -9,28 +13,37 @@
         android:name="android.hardware.type.automotive"
         android:required="true" />
 
+    <!--
+        NOTE: Do NOT set android:theme on the <application> element for AAOS
+        Car App Library apps — the theme must be set only on CarAppActivity.
+        appCategory is intentionally omitted; the app category is declared via
+        the androidx.car.app.category.IOT intent-filter category below.
+    -->
     <application
         android:allowBackup="true"
-        android:appCategory="audio"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.Pidrive">
+        android:supportsRtl="true">
 
-        <!-- It declares support for Android Automotive OS -->
+        <!-- Declares support for Android Automotive OS (Car App Library template path) -->
         <meta-data
             android:name="com.android.automotive"
             android:resource="@xml/automotive_app_desc" />
 
-        <!-- An entry point for CAL Android Automotive OS app -->
+        <!--
+            CarAppActivity is the AAOS entry point. It binds to PiDriveCarAppService
+            locally (same process) and renders the Car App Library templates.
+            Theme.DeviceDefault.NoActionBar is required by the Car App Library.
+        -->
         <activity
             android:name="androidx.car.app.activity.CarAppActivity"
             android:exported="true"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
@@ -38,6 +51,26 @@
                 android:name="distractionOptimized"
                 android:value="true" />
         </activity>
+
+        <!--
+            CarAppActivity binds to this service on launch using the
+            androidx.car.app.CarAppService action. Without this declaration the
+            bind fails silently and the AAOS app never renders.
+            android:exported="false" — the AAOS host is within the same process;
+            no cross-process remote binding is needed (unlike Android Auto projected).
+        -->
+        <service
+            android:name="ghart.space.pi_drive.shared.auto.PiDriveCarAppService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.IOT" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.car.app.minCarApiLevel"
+                android:value="1" />
+        </service>
+
     </application>
 
 </manifest>

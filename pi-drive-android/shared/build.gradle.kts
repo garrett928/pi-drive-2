@@ -97,4 +97,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    // Car App Library test harness: TestCarContext / ScreenController for driving
+    // Car App screens (onGetTemplate) under Robolectric without a head unit.
+    testImplementation(libs.androidx.app.testing)
 }

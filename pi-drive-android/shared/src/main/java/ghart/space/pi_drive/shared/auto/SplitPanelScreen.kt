@@ -5,13 +5,17 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.ActionStrip
+import androidx.car.app.model.CarColor
+import androidx.car.app.model.CarIcon
 import androidx.car.app.model.GridItem
 import androidx.car.app.model.GridTemplate
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.Template
+import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import ghart.space.pi_drive.shared.R
 import ghart.space.pi_drive.shared.data.model.AutoTripState
 import ghart.space.pi_drive.shared.data.model.ManualTripState
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
@@ -74,6 +78,8 @@ class SplitPanelScreen(carContext: CarContext) : Screen(carContext) {
         val pageLabel = if (page == SplitPageManager.Page.HERO) "1 / 2" else "2 / 2"
         val otherPageTitle = if (page == SplitPageManager.Page.HERO) "Tiles →" else "← Hero"
 
+        // A Car App ActionStrip allows at most one action with a custom title. The
+        // page-toggle keeps its (dynamic) label; the "back to Dials" action uses an icon.
         val actionStrip = ActionStrip.Builder()
             .addAction(
                 Action.Builder()
@@ -86,7 +92,7 @@ class SplitPanelScreen(carContext: CarContext) : Screen(carContext) {
             )
             .addAction(
                 Action.Builder()
-                    .setTitle("Dials")
+                    .setIcon(actionIcon(R.drawable.ic_aa_dials))
                     .setOnClickListener { screenManager.pop() }
                     .build()
             )
@@ -134,10 +140,44 @@ class SplitPanelScreen(carContext: CarContext) : Screen(carContext) {
         return builder.build()
     }
 
+    /**
+     * Builds a single grid tile.
+     *
+     * The Car App Library requires every [GridItem] in a [GridTemplate] to carry an
+     * image (or be flagged as loading); a title/text-only item throws
+     * [IllegalStateException] at build time. We attach a neutral gauge glyph tinted
+     * to the head-unit theme so the numeric [title] (the metric value) stays the focus.
+     */
     private fun buildGridItem(title: String, label: String): GridItem =
         GridItem.Builder()
             .setTitle(title)
             .setText(label)
+            .setImage(tileIcon, GridItem.IMAGE_TYPE_ICON)
             .build()
+
+    private val tileIcon: CarIcon by lazy {
+        CarIcon.Builder(
+            IconCompat.createWithResource(carContext, R.drawable.ic_metric_tile)
+        )
+            .setTint(CarColor.DEFAULT)
+            .build()
+    }
+
+    /** Builds a theme-tinted [CarIcon] for an ActionStrip action from a drawable resource. */
+    private fun actionIcon(resId: Int): CarIcon =
+        CarIcon.Builder(IconCompat.createWithResource(carContext, resId))
+            .setTint(CarColor.DEFAULT)
+            .build()
+
+    /**
+     * Test seam: switches to the [SplitPageManager.Page.TILES] page so a test can render and
+     * validate the page-2 template. Mirrors what the ActionStrip toggle does at runtime
+     * (toggle page + [invalidate]) without invoking a host-backed click listener.
+     */
+    @androidx.annotation.VisibleForTesting
+    internal fun showTilesPageForTest() {
+        pageManager.showTiles()
+        invalidate()
+    }
 }
 

@@ -5,10 +5,14 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.ActionStrip
+import androidx.car.app.model.CarColor
+import androidx.car.app.model.CarIcon
 import androidx.car.app.model.GridItem
 import androidx.car.app.model.GridTemplate
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.Template
+import androidx.core.graphics.drawable.IconCompat
+import ghart.space.pi_drive.shared.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -105,16 +109,18 @@ class DialsScreen(carContext: CarContext) : Screen(carContext) {
             itemListBuilder.addItem(buildGridItem(dangered, labelText))
         }
 
+        // Nav actions use icons, not titles: a Car App ActionStrip allows at most
+        // one action with a custom title, so multi-action strips must be icon-based.
         val actionStrip = ActionStrip.Builder()
             .addAction(
                 Action.Builder()
-                    .setTitle("Graphs")
+                    .setIcon(actionIcon(R.drawable.ic_aa_graphs))
                     .setOnClickListener { screenManager.push(GraphsScreen(carContext)) }
                     .build()
             )
             .addAction(
                 Action.Builder()
-                    .setTitle("Panel")
+                    .setIcon(actionIcon(R.drawable.ic_aa_panel))
                     .setOnClickListener { screenManager.push(SplitPanelScreen(carContext)) }
                     .build()
             )
@@ -127,10 +133,33 @@ class DialsScreen(carContext: CarContext) : Screen(carContext) {
             .build()
     }
 
+    /**
+     * Builds a single grid tile.
+     *
+     * The Car App Library requires every [GridItem] in a [GridTemplate] to have an
+     * image (or be flagged as loading); a title/text-only item throws
+     * [IllegalStateException] at build time. We attach a neutral gauge glyph tinted
+     * to the head-unit theme so the numeric [title] (the metric value) stays the focus.
+     */
     private fun buildGridItem(title: String, label: String): GridItem =
         GridItem.Builder()
             .setTitle(title)
             .setText(label)
+            .setImage(tileIcon, GridItem.IMAGE_TYPE_ICON)
+            .build()
+
+    private val tileIcon: CarIcon by lazy {
+        CarIcon.Builder(
+            IconCompat.createWithResource(carContext, R.drawable.ic_metric_tile)
+        )
+            .setTint(CarColor.DEFAULT)
+            .build()
+    }
+
+    /** Builds a theme-tinted [CarIcon] for an ActionStrip action from a drawable resource. */
+    private fun actionIcon(resId: Int): CarIcon =
+        CarIcon.Builder(IconCompat.createWithResource(carContext, resId))
+            .setTint(CarColor.DEFAULT)
             .build()
 }
 

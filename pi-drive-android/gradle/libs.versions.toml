@@ -23,9 +23,9 @@ turbine = "1.2.0"
 mockk = "1.14.2"
 robolectric = "4.14.1"
 androidxTestCore = "1.6.1"
-appProjected = "1.4.0"
+appProjected = "1.7.0"
 appAutomotive = "1.7.0"
-app = "1.4.0"
+app = "1.7.0"
 coreSplashscreen = "1.0.1"
 
 [libraries]
@@ -82,6 +82,7 @@ work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version
 androidx-app-projected = { group = "androidx.car.app", name = "app-projected", version.ref = "appProjected" }
 androidx-app-automotive = { group = "androidx.car.app", name = "app-automotive", version.ref = "appAutomotive" }
 androidx-app = { group = "androidx.car.app", name = "app", version.ref = "app" }
+androidx-app-testing = { group = "androidx.car.app", name = "app-testing", version.ref = "app" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
