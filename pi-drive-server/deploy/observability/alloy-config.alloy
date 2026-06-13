@@ -1,0 +1,104 @@
+// Grafana Alloy — collect the Pi Drive server's JSON logs and forward to Loki.
+//
+// The server writes one JSON object per line to stdout (LOG_FORMAT=json); it
+// never talks to Loki itself. Alloy tails the container's stdout, parses the
+// JSON into Loki labels + structured metadata, and ships it with a WAL so a
+// Loki outage is buffered and backfilled on recovery (REQUIREMENTS.md §10.4).
+//
+// Shared schema with the Android app (keep in sync — one Grafana queries both):
+//   Labels (low cardinality):  app, component, level, env
+//   Structured metadata:       request_id, vin, device_id, endpoint, status, logger
+
+// ── Discover the pidrive-server container and tail its logs ─────────────────────
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Keep only the pidrive-server container; expose its name as a target label.
+discovery.relabel "pidrive" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/?(.*pidrive-server.*)"
+    target_label  = "container"
+    action        = "keep"
+  }
+}
+
+loki.source.docker "pidrive" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.pidrive.output
+  forward_to = [loki.process.pidrive.receiver]
+}
+
+// ── Parse JSON → labels + structured metadata ───────────────────────────────────
+loki.process "pidrive" {
+  forward_to = [loki.write.default.receiver]
+
+  // Lift fields out of the JSON log line.
+  stage.json {
+    expressions = {
+      timestamp   = "timestamp",
+      level       = "level",
+      logger      = "logger",
+      app         = "app",
+      component   = "component",
+      env         = "env",
+      request_id  = "request_id",
+      vin         = "vin",
+      device_id   = "device_id",
+      endpoint    = "endpoint",
+      status      = "status",
+    }
+  }
+
+  // Use the app's own RFC3339 timestamp as the log time.
+  stage.timestamp {
+    source = "timestamp"
+    format = "RFC3339"
+  }
+
+  // Low-cardinality labels (indexed). `app` is static; default it if absent.
+  stage.static_labels {
+    values = { app = "pi-drive-server" }
+  }
+  stage.labels {
+    values = {
+      component = "",
+      level     = "",
+      env       = "",
+    }
+  }
+
+  // High-cardinality identifiers go to structured metadata, not labels.
+  stage.structured_metadata {
+    values = {
+      request_id = "",
+      vin        = "",
+      device_id  = "",
+      endpoint   = "",
+      status     = "",
+      logger     = "",
+    }
+  }
+}
+
+// ── Forward to Loki, buffering to a WAL when Loki is unavailable ─────────────────
+loki.write "default" {
+  endpoint {
+    url = env("LOKI_URL")
+
+    // Retry with backoff so transient Loki errors don't drop logs.
+    max_backoff_period = "5m"
+  }
+
+  // Disk WAL: if Loki is down, Alloy buffers here and backfills on recovery —
+  // the "cache and reupload" requirement, handled by the collector not the app.
+  wal {
+    enabled           = true
+    max_segment_age   = "1h"
+  }
+
+  external_labels = {}
+}

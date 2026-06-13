@@ -1,0 +1,157 @@
+/*
+ * Pi Drive Server UI — warm-dark theme.
+ * Tokens mirror pi-drive-android/ui-handoff pd-tokens.jsx (dark palette,
+ * default amber accent oklch(0.72 0.17 55) ≈ #D88A30 on #201D19).
+ */
+
+:root {
+  --bg: oklch(0.155 0.005 60);
+  --bg-elev: oklch(0.195 0.005 60);
+  --surface: oklch(0.215 0.005 60);
+  --surface-2: oklch(0.255 0.005 60);
+  --border: oklch(0.30 0.005 60);
+  --fg: oklch(0.97 0.005 80);
+  --fg-muted: oklch(0.70 0.005 70);
+  --fg-dim: oklch(0.50 0.005 70);
+  --accent: oklch(0.72 0.17 55);
+  --accent-soft: oklch(0.72 0.17 55 / 0.16);
+  --accent-strong: oklch(0.78 0.18 55);
+  --danger: oklch(0.66 0.20 25);
+  --success: oklch(0.74 0.16 150);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.92em; }
+.muted { color: var(--fg-muted); }
+.required { color: var(--accent); }
+.ok { color: var(--success); }
+.err { color: var(--danger); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-strong); }
+
+/* ── Header / nav ── */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1.5rem;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 700; font-size: 1.1rem; color: var(--fg); display: flex; align-items: center; gap: 0.5rem; }
+.brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); display: inline-block; }
+.site-header nav { display: flex; gap: 1.2rem; }
+.site-header nav a { color: var(--fg-muted); padding: 0.25rem 0; }
+.site-header nav a.active, .site-header nav a:hover { color: var(--fg); border-bottom: 2px solid var(--accent); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 1.5rem; }
+.site-footer { text-align: center; color: var(--fg-dim); padding: 2rem 0; font-size: 0.85rem; }
+
+h1 { font-size: 1.5rem; margin: 0.5rem 0 1rem; }
+h2 { font-size: 1.1rem; margin: 0 0 0.8rem; }
+h3 { font-size: 0.95rem; color: var(--fg-muted); margin: 1rem 0 0.4rem; }
+
+/* ── Flash messages ── */
+.flashes { margin-bottom: 1rem; }
+.flash { padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid; }
+.flash-success { background: oklch(0.74 0.16 150 / 0.12); border-color: var(--success); color: var(--success); }
+.flash-error { background: oklch(0.66 0.20 25 / 0.12); border-color: var(--danger); color: var(--danger); }
+
+/* ── Cards / layout ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1.2rem;
+}
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+@media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+.card-header-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem; }
+.empty-state { text-align: center; padding: 2.5rem 1rem; }
+
+/* ── Stats ── */
+.stat-grid { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.8rem; }
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1.4rem;
+  display: flex; flex-direction: column; align-items: center; min-width: 110px;
+}
+.stat-value { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+.stat-label { color: var(--fg-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ── Vehicle cards ── */
+.vehicle-card { display: block; color: var(--fg); transition: border-color 0.15s; }
+.vehicle-card:hover { border-color: var(--accent); color: var(--fg); }
+.vehicle-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.2rem; }
+.vehicle-meta { display: flex; gap: 1rem; color: var(--fg-muted); font-size: 0.85rem; margin: 0.4rem 0; }
+.sparkline { width: 100%; height: 28px; margin: 0.3rem 0; }
+.sparkline polyline { stroke: var(--accent); stroke-width: 1.5; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+th { color: var(--fg-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+tbody tr:hover { background: var(--surface-2); }
+.actions-col { text-align: right; white-space: nowrap; }
+
+/* ── Forms ── */
+label { display: block; color: var(--fg-muted); font-size: 0.85rem; margin: 0.7rem 0 0.25rem; }
+input[type="text"], input[type="password"], input[type="number"], input[type="file"], select, textarea {
+  width: 100%;
+  background: var(--surface-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.form-card { max-width: 720px; }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 1rem; }
+.form-actions { margin-top: 1.2rem; display: flex; gap: 0.6rem; }
+.inline-form { display: inline; }
+.filter-bar { display: flex; align-items: end; gap: 0.8rem; flex-wrap: wrap; }
+.filter-bar label { margin: 0 0 0.25rem; }
+.filter-bar input, .filter-bar select { width: auto; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-block;
+  background: var(--surface-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); color: var(--fg); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: oklch(0.155 0.005 60); font-weight: 600; }
+.btn-primary:hover { background: var(--accent-strong); color: oklch(0.155 0.005 60); }
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { border-color: var(--danger); }
+.btn-small { padding: 0.2rem 0.55rem; font-size: 0.82rem; }
+
+/* ── Misc ── */
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0; }
+.kv dt { color: var(--fg-muted); }
+.kv dd { margin: 0; }
+.pager { display: flex; align-items: center; gap: 1rem; justify-content: center; margin: 1rem 0; }
+.checkbox-row { display: flex; align-items: center; gap: 0.5rem; color: var(--fg); margin-top: 0.8rem; }
+.checkbox-row input { width: auto; }
+.login-card { max-width: 380px; margin: 4rem auto; }
+.error-card { max-width: 480px; margin: 3rem auto; text-align: center; }
+code { background: var(--surface-2); border-radius: 4px; padding: 0.1rem 0.35rem; font-size: 0.88em; }

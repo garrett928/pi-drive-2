@@ -1,0 +1,17 @@
+# Headless-friendly ClusterIP for the Postgres StatefulSet. The DATABASE_URL
+# host (`pidrive-postgres`) resolves here.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pidrive-postgres
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-postgres
+    app.kubernetes.io/part-of: pi-drive
+spec:
+  selector:
+    app.kubernetes.io/name: pidrive-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

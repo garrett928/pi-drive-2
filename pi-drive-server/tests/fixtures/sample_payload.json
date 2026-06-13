@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-05-24T22:15:30.123Z",
+  "device_id": "pd-rxv7a3-k9892",
+  "vin": "1G1JC524417100001",
+  "location": { "lat": 37.7749, "lng": -122.4194, "speed_gps": 65.2 },
+  "obd": {
+    "speed_kmh": 105,
+    "rpm": 2400,
+    "coolant_temp_c": 92,
+    "intake_air_temp_c": 35,
+    "throttle_pct": 22.5,
+    "fuel_level_pct": 68.0,
+    "oil_temp_c": 95,
+    "maf_gps": 12.5,
+    "fuel_rate_lph": null,
+    "battery_voltage": 14.2
+  },
+  "calculated": { "fuel_economy_mpg": 28.5, "fuel_economy_kml": 12.1 },
+  "accel_mps2": 0.45,
+  "events": [
+    {
+      "strategy": "ACCELERATION",
+      "type": "HARD_BRAKE",
+      "timestamp": "2026-05-24T22:15:29.500Z",
+      "duration_ms": 1200,
+      "rate_mph_s": -11.2,
+      "peak_accel_mps2": -5.0,
+      "start_speed_mph": 59,
+      "end_speed_mph": 38,
+      "sources": ["OBD", "GPS"]
+    },
+    {
+      "strategy": "G_FORCE",
+      "type": "HARD_BRAKE",
+      "timestamp": "2026-05-24T22:15:29.500Z",
+      "duration_ms": 1200,
+      "peak_g": 0.51,
+      "peak_accel_mps2": -5.0,
+      "start_speed_mph": 59,
+      "end_speed_mph": 38,
+      "sources": ["OBD", "GPS", "ACCELEROMETER"]
+    }
+  ]
+}

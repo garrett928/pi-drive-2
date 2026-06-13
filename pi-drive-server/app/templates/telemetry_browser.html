@@ -1,0 +1,76 @@
+{# Telemetry browser (§9.1): paginated, filterable table with row actions. #}
+{% extends "base.html" %}
+{% block title %}Telemetry · {{ vin }}{% endblock %}
+{% block content %}
+<h1>Telemetry <span class="muted mono">{{ vin }}</span></h1>
+<p><a href="{{ url_for('web.vehicle_detail', vin=vin) }}">← back to vehicle</a></p>
+
+<form method="get" class="card filter-bar">
+  <label for="start">From</label>
+  <input type="text" id="start" name="start" value="{{ start }}" placeholder="2026-04-01T00:00:00Z">
+  <label for="end">To</label>
+  <input type="text" id="end" name="end" value="{{ end }}" placeholder="2026-04-30T23:59:59Z">
+  <label for="order">Order</label>
+  <select id="order" name="order">
+    <option value="desc" {{ 'selected' if order == 'desc' }}>Newest first</option>
+    <option value="asc" {{ 'selected' if order == 'asc' }}>Oldest first</option>
+  </select>
+  <input type="hidden" name="limit" value="{{ limit }}">
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a class="btn" href="{{ url_for('web.telemetry_new', vin=vin) }}">Add snapshot</a>
+</form>
+
+{% if rows %}
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th><th>Speed</th><th>RPM</th><th>Throttle</th><th>Coolant</th>
+          <th>Fuel</th><th>MPG</th><th>Source</th><th class="actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td class="mono">{{ iso_z(row.time) }}</td>
+            <td>{{ row.speed_kmh if row.speed_kmh is not none else "—" }}</td>
+            <td>{{ row.rpm if row.rpm is not none else "—" }}</td>
+            <td>{{ row.throttle_pct if row.throttle_pct is not none else "—" }}</td>
+            <td>{{ row.coolant_temp_c if row.coolant_temp_c is not none else "—" }}</td>
+            <td>{{ row.fuel_level_pct if row.fuel_level_pct is not none else "—" }}</td>
+            <td>{{ row.fuel_economy_mpg if row.fuel_economy_mpg is not none else "—" }}</td>
+            <td>{{ row.source }}</td>
+            <td class="actions-col">
+              <a class="btn btn-small" href="{{ url_for('web.telemetry_edit', vin=vin, timestamp=iso_z(row.time)) }}">Edit</a>
+              {# Delete is a CSRF-protected POST; confirm inline (works sans JS too — the confirm is progressive enhancement). #}
+              <form method="post" class="inline-form"
+                    action="{{ url_for('web.telemetry_delete', vin=vin, timestamp=iso_z(row.time)) }}"
+                    onsubmit="return confirm('Delete snapshot {{ iso_z(row.time) }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-small btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    {% if offset > 0 %}
+      <a class="btn" href="{{ url_for('web.telemetry_browser', vin=vin, start=start or None, end=end or None,
+                                       order=order, limit=limit, offset=[offset - limit, 0]|max) }}">← Newer</a>
+    {% endif %}
+    <span class="muted">rows {{ offset + 1 }}–{{ offset + rows|length }}</span>
+    {% if has_more %}
+      <a class="btn" href="{{ url_for('web.telemetry_browser', vin=vin, start=start or None, end=end or None,
+                                       order=order, limit=limit, offset=offset + limit) }}">Older →</a>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="card empty-state">
+    <p>No snapshots match.</p>
+    <p class="muted">Adjust the filters or <a href="{{ url_for('web.telemetry_new', vin=vin) }}">add one manually</a>.</p>
+  </div>
+{% endif %}
+{% endblock %}

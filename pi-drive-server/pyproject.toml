@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pi-drive-server"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1",
+    "gunicorn>=23.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "zstandard>=0.23",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "requests>=2.32",
+    "testcontainers>=4.0",
+    "ruff>=0.6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: requires a live TimescaleDB (Flask test client + real DB). Skipped when no database is available.",
+    "e2e: requires a live TimescaleDB and a real server over a socket. Skipped when no database is available.",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+# Pyflakes (F) + pycodestyle (E/W) + isort (I) + bugbear (B) + pyupgrade (UP).
+select = ["E", "F", "W", "I", "B", "UP"]
+# E501 (line length) is enforced by the formatter, not the linter, to avoid
+# noise on long docstrings/SQL; keep the rest strict.
+ignore = ["E501"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

@@ -1,0 +1,50 @@
+{# Base layout for every UI page (§9): header nav, flash messages, content. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Pi Drive{% endblock %} · Pi Drive Server</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('web.dashboard') }}">
+      <span class="brand-dot"></span> Pi Drive
+    </a>
+    <nav>
+      <a href="{{ url_for('web.dashboard') }}"
+         class="{{ 'active' if request.endpoint == 'web.dashboard' }}">Dashboard</a>
+      <a href="{{ url_for('web.import_page') }}"
+         class="{{ 'active' if request.endpoint == 'web.import_page' }}">Import</a>
+      <a href="{{ url_for('web.admin') }}"
+         class="{{ 'active' if request.endpoint == 'web.admin' }}">Admin</a>
+      {% if auth_enabled %}
+        {% if logged_in() %}
+          <a href="{{ url_for('web.logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('web.login') }}">Login</a>
+        {% endif %}
+      {% endif %}
+    </nav>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    Pi Drive Server · telemetry for the garage
+  </footer>
+</body>
+</html>

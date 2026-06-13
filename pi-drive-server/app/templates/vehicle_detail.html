@@ -1,0 +1,112 @@
+{# Vehicle detail (§9.1): editable metadata, rollups, recent rows + events. #}
+{% extends "base.html" %}
+{% block title %}{{ vehicle.nickname or vehicle.vin }}{% endblock %}
+{% block content %}
+<h1>{{ vehicle.nickname or vehicle.vin }}</h1>
+<p class="muted mono">{{ vehicle.vin }}{% if vehicle.device_id %} · device {{ vehicle.device_id }}{% endif %}</p>
+
+<div class="two-col">
+  <section class="card">
+    <h2>Metadata</h2>
+    <form method="post" action="{{ url_for('web.vehicle_detail', vin=vehicle.vin) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="nickname">Nickname</label>
+      <input type="text" id="nickname" name="nickname" value="{{ vehicle.nickname or '' }}">
+      <label for="make">Make</label>
+      <input type="text" id="make" name="make" value="{{ vehicle.make or '' }}">
+      <label for="model">Model</label>
+      <input type="text" id="model" name="model" value="{{ vehicle.model or '' }}">
+      <label for="year">Year</label>
+      <input type="number" id="year" name="year" value="{{ vehicle.year or '' }}">
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Stats</h2>
+    <form method="get" class="inline-form">
+      <label for="days">Range</label>
+      <select id="days" name="days" onchange="this.form.submit()">
+        {% for key in range_choices %}
+          <option value="{{ key }}" {{ 'selected' if key == range_key }}>
+            {{ 'All time' if key == 'all' else 'Last ' ~ key ~ ' days' }}
+          </option>
+        {% endfor %}
+      </select>
+      <noscript><button type="submit" class="btn">Apply</button></noscript>
+    </form>
+    {% if stats and stats.sample_count %}
+      <dl class="kv">
+        <dt>Samples</dt><dd>{{ stats.sample_count }}</dd>
+        <dt>Avg speed</dt><dd>{{ "%.1f"|format(stats.avg_speed_kmh) if stats.avg_speed_kmh is not none else "—" }} km/h</dd>
+        <dt>Max speed</dt><dd>{{ "%.1f"|format(stats.max_speed_kmh) if stats.max_speed_kmh is not none else "—" }} km/h</dd>
+        <dt>Avg economy</dt><dd>{{ "%.1f"|format(stats.avg_fuel_economy_mpg) if stats.avg_fuel_economy_mpg is not none else "—" }} mpg</dd>
+        <dt>First sample</dt><dd>{{ stats.first_time or "—" }}</dd>
+        <dt>Last sample</dt><dd>{{ stats.last_time or "—" }}</dd>
+      </dl>
+      {% if stats.events_by_type %}
+        <h3>Events</h3>
+        <dl class="kv">
+          {% for type, n in stats.events_by_type.items() %}
+            <dt>{{ type }}</dt><dd>{{ n }}</dd>
+          {% endfor %}
+        </dl>
+      {% endif %}
+    {% else %}
+      <p class="muted">No samples in this range.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-header-row">
+    <h2>Recent telemetry</h2>
+    <div>
+      <a class="btn" href="{{ url_for('web.telemetry_browser', vin=vehicle.vin) }}">Browse all</a>
+      <a class="btn" href="{{ url_for('web.telemetry_new', vin=vehicle.vin) }}">Add snapshot</a>
+      <a class="btn" href="{{ url_for('web.admin_export', vin=vehicle.vin) }}">Export CSV</a>
+    </div>
+  </div>
+  {% if recent %}
+    <table>
+      <thead><tr><th>Time</th><th>Speed</th><th>RPM</th><th>Coolant</th><th>MPG</th><th>Source</th></tr></thead>
+      <tbody>
+        {% for row in recent %}
+          <tr>
+            <td class="mono">{{ iso_z(row.time) }}</td>
+            <td>{{ row.speed_kmh if row.speed_kmh is not none else "—" }}</td>
+            <td>{{ row.rpm if row.rpm is not none else "—" }}</td>
+            <td>{{ row.coolant_temp_c if row.coolant_temp_c is not none else "—" }}</td>
+            <td>{{ row.fuel_economy_mpg if row.fuel_economy_mpg is not none else "—" }}</td>
+            <td>{{ row.source }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">No telemetry yet.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Recent events <span class="muted">({{ event_total }} total)</span></h2>
+  {% if events %}
+    <table>
+      <thead><tr><th>Time</th><th>Type</th><th>Strategy</th><th>Peak</th><th>Duration</th></tr></thead>
+      <tbody>
+        {% for e in events %}
+          <tr>
+            <td class="mono">{{ iso_z(e.time) }}</td>
+            <td>{{ e.type }}</td>
+            <td>{{ e.strategy }}</td>
+            <td>{{ e.peak_g ~ " g" if e.peak_g is not none else (e.rate_mph_s ~ " mph/s" if e.rate_mph_s is not none else "—") }}</td>
+            <td>{{ e.duration_ms ~ " ms" if e.duration_ms is not none else "—" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">No events recorded.</p>
+  {% endif %}
+</section>
+{% endblock %}

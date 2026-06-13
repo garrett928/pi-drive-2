@@ -1,0 +1,36 @@
+# One-shot Alembic migration Job — the alternative to the image's boot-time
+# migration. Use this when you prefer migrations decoupled from pod startup
+# (e.g. a CD gate): set RUN_MIGRATIONS=0 in the ConfigMap so the Deployment
+# does NOT also migrate, and run this Job before rolling out a new version.
+#
+#   kubectl apply -f deploy/k8s/migration-job.yaml
+#   kubectl -n pi-drive wait --for=condition=complete job/pidrive-migrate --timeout=120s
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pidrive-migrate
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-server
+    app.kubernetes.io/part-of: pi-drive
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pidrive-server
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: migrate
+          image: pidrive-server:latest
+          # Run only the advisory-locked migration script, then exit.
+          command: ["python", "deploy/run_migrations.py"]
+          envFrom:
+            - configMapRef:
+                name: pidrive-config
+            - secretRef:
+                name: pidrive-secrets

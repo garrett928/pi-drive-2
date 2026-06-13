@@ -1,0 +1,17 @@
+# ClusterIP fronting the server pods on 8080. The Ingress routes to this.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pidrive-server
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-server
+    app.kubernetes.io/part-of: pi-drive
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: pidrive-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

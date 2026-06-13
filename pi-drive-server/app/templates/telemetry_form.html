@@ -1,0 +1,51 @@
+{# Shared manual-entry ("new") and edit-one ("edit") snapshot form (§9.1). #}
+{% extends "base.html" %}
+{% block title %}{{ "Edit snapshot" if mode == "edit" else "Add snapshot" }}{% endblock %}
+{% block content %}
+<h1>{{ "Edit snapshot" if mode == "edit" else "Add snapshot" }}</h1>
+
+<form method="post" class="card form-card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  {% if mode == "new" %}
+    <label for="vin">VIN <span class="required">*</span></label>
+    <input type="text" id="vin" name="vin" required
+           value="{{ values.get('vin', vin or '') }}" {{ 'readonly' if vin }}>
+    <label for="time">Timestamp (ISO 8601, UTC) <span class="required">*</span></label>
+    <input type="text" id="time" name="time" required placeholder="2026-04-01T10:00:00Z"
+           value="{{ values.get('time', '') }}">
+  {% else %}
+    <p class="muted mono">{{ vin }} · {{ timestamp }}</p>
+    <p class="muted">Blank fields are stored as empty (null).</p>
+  {% endif %}
+
+  <div class="field-grid">
+    {% for name, label, kind in form_fields %}
+      <div class="field">
+        <label for="{{ name }}">{{ label }}</label>
+        {% if kind == "text" %}
+          <input type="text" id="{{ name }}" name="{{ name }}" value="{{ values.get(name, '') }}">
+        {% else %}
+          <input type="number" step="{{ '1' if kind == 'int' else 'any' }}"
+                 id="{{ name }}" name="{{ name }}" value="{{ values.get(name, '') }}">
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if mode == "new" %}
+    <label for="extra">Extra (JSON object, optional)</label>
+    <textarea id="extra" name="extra" rows="2"
+              placeholder='{"note": "logged by hand"}'>{{ values.get('extra', '') }}</textarea>
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">{{ "Save changes" if mode == "edit" else "Add snapshot" }}</button>
+    {% if vin %}
+      <a class="btn" href="{{ url_for('web.telemetry_browser', vin=vin) }}">Cancel</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('web.dashboard') }}">Cancel</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

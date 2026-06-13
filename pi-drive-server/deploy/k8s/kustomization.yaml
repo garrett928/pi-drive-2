@@ -1,0 +1,33 @@
+# Ties the Pi Drive server resources together.
+#
+#   kubectl apply -k deploy/k8s/
+#
+# Note: secret.example.yaml is NOT included — copy it to secret.yaml with real
+# values and either add it here or apply it separately. The migration Job is
+# also excluded from the default apply (migrations run on boot); apply it
+# explicitly if you set RUN_MIGRATIONS=0.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pi-drive
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - server-deployment.yaml
+  - server-service.yaml
+  - ingress.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: pi-drive
+
+images:
+  # Override the tag at deploy time, e.g.:
+  #   kustomize edit set image pidrive-server=ghcr.io/you/pidrive-server:v1.2.3
+  - name: pidrive-server
+    newName: pidrive-server
+    newTag: latest

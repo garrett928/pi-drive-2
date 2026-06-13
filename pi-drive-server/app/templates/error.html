@@ -1,0 +1,10 @@
+{# Friendly HTML error page (browsers only — API clients still get JSON). #}
+{% extends "base.html" %}
+{% block title %}{{ status }}{% endblock %}
+{% block content %}
+<div class="card error-card">
+  <h1>{{ status }}</h1>
+  <p>{{ message }}</p>
+  <p><a class="btn" href="{{ url_for('web.dashboard') }}">Back to dashboard</a></p>
+</div>
+{% endblock %}

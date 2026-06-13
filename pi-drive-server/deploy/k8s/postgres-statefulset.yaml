@@ -1,0 +1,70 @@
+# In-cluster TimescaleDB with a PersistentVolumeClaim for durability + the
+# "view a year quickly" requirement (§10.3). Alternative: delete this file and
+# postgres-service.yaml, and point DATABASE_URL at a managed Postgres/Timescale.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pidrive-postgres
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-postgres
+    app.kubernetes.io/part-of: pi-drive
+spec:
+  serviceName: pidrive-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pidrive-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pidrive-postgres
+        app.kubernetes.io/part-of: pi-drive
+    spec:
+      containers:
+        - name: timescaledb
+          image: timescale/timescaledb:latest-pg16
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: pidrive
+            - name: POSTGRES_DB
+              value: pidrive
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pidrive-secrets
+                  key: POSTGRES_PASSWORD
+            # Keep PGDATA in a subdir so the volume root (lost+found) doesn't clash.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "pidrive", "-d", "pidrive"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "pidrive", "-d", "pidrive"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

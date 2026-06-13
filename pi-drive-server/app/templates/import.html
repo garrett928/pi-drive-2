@@ -1,0 +1,36 @@
+{# CSV upload (§9.1): form → calls csv_service → shows the import report. #}
+{% extends "base.html" %}
+{% block title %}Import CSV{% endblock %}
+{% block content %}
+<h1>Import telemetry CSV</h1>
+
+<form method="post" enctype="multipart/form-data" class="card form-card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="file">CSV file</label>
+  <input type="file" id="file" name="file" accept=".csv,text/csv" required>
+  <p class="muted">Header must include <code>vin</code> and <code>time</code>; columns match a
+     Pi Drive export. Rows upsert by (vin, time), so re-importing a file is safe.</p>
+  <button type="submit" class="btn btn-primary">Upload &amp; import</button>
+</form>
+
+{% if report %}
+  <div class="card">
+    <h2>Import result</h2>
+    <div class="stat-grid">
+      <div class="stat"><span class="stat-value">{{ report.imported }}</span><span class="stat-label">Imported</span></div>
+      <div class="stat"><span class="stat-value">{{ report.skipped }}</span><span class="stat-label">Skipped</span></div>
+    </div>
+    {% if report.errors %}
+      <h3>Skipped rows</h3>
+      <table>
+        <thead><tr><th>File line</th><th>Reason</th></tr></thead>
+        <tbody>
+          {% for err in report.errors %}
+            <tr><td>{{ err.row }}</td><td>{{ err.reason }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

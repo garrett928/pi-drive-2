@@ -1,0 +1,24 @@
+# Non-secret runtime configuration (§10.2). Secrets (API key, DB creds, Flask
+# SECRET_KEY) live in the Secret, never here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pidrive-config
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-server
+    app.kubernetes.io/part-of: pi-drive
+data:
+  ENV: "prod"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"           # one JSON object per line → Alloy → Loki (§10.4)
+  # UI login is off by default (decision 2026-06-11). Set "true" only if the
+  # UI is exposed beyond a trusted network.
+  UI_REQUIRE_AUTH: "false"
+  MAX_BODY_BYTES: "10485760"   # 10 MiB
+  GUNICORN_WORKERS: "2"
+  # Telemetry retention in days. Omit/empty to keep data forever.
+  TELEMETRY_RETENTION_DAYS: "365"
+  # The image migrates on boot under an advisory lock; if you prefer the
+  # one-shot migration Job, set this to "0" on the Deployment.
+  RUN_MIGRATIONS: "1"

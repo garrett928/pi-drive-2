@@ -1,0 +1,95 @@
+# Grafana Alloy as a DaemonSet: one collector per node, tailing pidrive-server
+# pod logs and forwarding to Loki. This is the optional observability layer —
+# NOT in kustomization.yaml; apply it explicitly:
+#
+#   kubectl apply -f deploy/k8s/alloy-configmap.yaml
+#   kubectl apply -f deploy/k8s/alloy-daemonset.yaml
+#
+# Set LOKI_URL (in-cluster Loki Service, or an external/Grafana-Cloud push URL).
+# For Grafana Cloud, add the auth token via a Secret and a basic_auth block in
+# the config.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pidrive-alloy
+  namespace: pi-drive
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pidrive-alloy
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pidrive-alloy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pidrive-alloy
+subjects:
+  - kind: ServiceAccount
+    name: pidrive-alloy
+    namespace: pi-drive
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pidrive-alloy
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-alloy
+    app.kubernetes.io/part-of: pi-drive
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pidrive-alloy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pidrive-alloy
+        app.kubernetes.io/part-of: pi-drive
+    spec:
+      serviceAccountName: pidrive-alloy
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.2.0
+          args:
+            - run
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --storage.path=/var/lib/alloy/data
+            - /etc/alloy/config.alloy
+          env:
+            # Point at your Loki (in-cluster Service or external push URL).
+            - name: LOKI_URL
+              value: "http://loki.pi-drive.svc:3100/loki/api/v1/push"
+          ports:
+            - name: http
+              containerPort: 12345
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+            - name: wal
+              mountPath: /var/lib/alloy/data
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      volumes:
+        - name: config
+          configMap:
+            name: pidrive-alloy
+        # emptyDir WAL: buffers logs if Loki is briefly unavailable. For
+        # buffering across pod restarts, swap for a small PVC.
+        - name: wal
+          emptyDir: {}

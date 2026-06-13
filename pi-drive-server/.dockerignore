@@ -1,0 +1,17 @@
+# Keep the build context (and image) lean and reproducible.
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+*.egg-info/
+.venv/
+venv/
+
+# Dev-only artifacts not needed in the runtime image.
+screenshots/
+tests/
+deploy/.env
+*.dump

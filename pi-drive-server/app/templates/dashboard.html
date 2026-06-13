@@ -1,0 +1,49 @@
+{# Fleet dashboard (§9.1): totals, storage span, per-vehicle summary cards. #}
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Fleet dashboard</h1>
+
+<div class="stat-grid">
+  <div class="stat"><span class="stat-value">{{ stats.total_vehicles }}</span><span class="stat-label">Vehicles</span></div>
+  <div class="stat"><span class="stat-value">{{ stats.total_samples }}</span><span class="stat-label">Samples</span></div>
+  <div class="stat"><span class="stat-value">{{ stats.samples_24h }}</span><span class="stat-label">Last 24 h</span></div>
+  <div class="stat"><span class="stat-value">{{ stats.samples_7d }}</span><span class="stat-label">Last 7 d</span></div>
+  <div class="stat"><span class="stat-value">{{ stats.total_events }}</span><span class="stat-label">Events</span></div>
+</div>
+
+{% if stats.oldest %}
+  <p class="muted">Storage span: {{ stats.oldest }} → {{ stats.newest }}</p>
+{% endif %}
+
+<h2>Vehicles</h2>
+{% if stats.vehicles %}
+  <div class="card-grid">
+    {% for v in stats.vehicles %}
+      <a class="card vehicle-card" href="{{ url_for('web.vehicle_detail', vin=v.vin) }}">
+        <div class="vehicle-name">{{ v.nickname or v.vin }}</div>
+        {% if v.nickname %}<div class="muted mono">{{ v.vin }}</div>{% endif %}
+        <div class="vehicle-meta">
+          <span>{{ v.sample_count }} samples</span>
+          <span>{{ v.event_count }} events</span>
+        </div>
+        {% if v.sparkline %}
+          {# Avg speed, last 30 days — server-rendered, no JS needed. #}
+          <svg class="sparkline" viewBox="0 0 120 28" preserveAspectRatio="none"
+               role="img" aria-label="Average speed, last 30 days">
+            <polyline points="{{ v.sparkline }}" fill="none" />
+          </svg>
+        {% endif %}
+        <div class="muted">Last seen {{ v.last_seen or "never" }}</div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty-state">
+    <p>No vehicles yet.</p>
+    <p class="muted">Vehicles register automatically when the Pi Drive app uploads telemetry,
+       or <a href="{{ url_for('web.import_page') }}">import a CSV</a> /
+       <a href="{{ url_for('web.telemetry_new') }}">add a snapshot manually</a>.</p>
+  </div>
+{% endif %}
+{% endblock %}

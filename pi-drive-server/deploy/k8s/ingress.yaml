@@ -1,0 +1,30 @@
+# Example TLS ingress. Placeholders: set your host, ingress class, and a cert
+# (here via cert-manager's letsencrypt issuer — adjust to your setup, or remove
+# the TLS block to terminate TLS elsewhere).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pidrive-server
+  namespace: pi-drive
+  labels:
+    app.kubernetes.io/name: pidrive-server
+    app.kubernetes.io/part-of: pi-drive
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"   # placeholder
+spec:
+  ingressClassName: nginx                                  # placeholder
+  tls:
+    - hosts:
+        - pidrive.example.com                              # placeholder
+      secretName: pidrive-tls
+  rules:
+    - host: pidrive.example.com                            # placeholder
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pidrive-server
+                port:
+                  number: 8080

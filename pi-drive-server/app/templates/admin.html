@@ -1,0 +1,77 @@
+{# Admin shell (§9.1): CSV export now; backup/restore + retention in Phase 6. #}
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1>Admin</h1>
+
+<section class="card">
+  <h2>Export telemetry CSV</h2>
+  {% if vehicles %}
+    <form method="get" action="{{ url_for('web.admin_export') }}" class="form-card">
+      <label for="vin">Vehicle</label>
+      <select id="vin" name="vin" required>
+        {% for v in vehicles %}
+          <option value="{{ v.vin }}">{{ v.nickname or v.vin }}{% if v.nickname %} ({{ v.vin }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <label for="start">From (optional)</label>
+      <input type="text" id="start" name="start" placeholder="2026-04-01T00:00:00Z">
+      <label for="end">To (optional)</label>
+      <input type="text" id="end" name="end" placeholder="2026-04-30T23:59:59Z">
+      <button type="submit" class="btn btn-primary">Download CSV</button>
+    </form>
+  {% else %}
+    <p class="muted">No vehicles to export yet.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Database backup &amp; restore</h2>
+  {% if pg_tools %}
+    <p class="muted">Full-database dump (<code>pg_dump</code> custom format) — distinct from the telemetry CSV above.</p>
+    <p><a class="btn btn-primary" href="{{ url_for('web.admin_backup') }}">Download backup</a></p>
+
+    <h3>Restore from backup</h3>
+    <p class="muted err"><strong>Destructive:</strong> restoring replaces all existing data in the database.</p>
+    <form method="post" action="{{ url_for('web.admin_restore') }}" enctype="multipart/form-data" class="form-card">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="backup">Backup file (.dump)</label>
+      <input type="file" id="backup" name="file" accept=".dump" required>
+      <label class="checkbox-row">
+        <input type="checkbox" name="confirm" value="yes" required>
+        I understand this replaces all existing data.
+      </label>
+      <button type="submit" class="btn btn-danger"
+              onclick="return confirm('Restore will REPLACE all current data. Continue?')">
+        Restore database
+      </button>
+    </form>
+  {% else %}
+    <p class="muted err">The <code>pg_dump</code>/<code>pg_restore</code> client tools are not available on the
+       server, so backup/restore is disabled. Install the PostgreSQL client (the production image includes it)
+       or set <code>PG_BIN_DIR</code>.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Retention</h2>
+  {% if retention_days %}
+    <p>Telemetry is retained for <strong>{{ retention_days }} days</strong>; TimescaleDB drops older chunks
+       automatically.</p>
+  {% else %}
+    <p>No retention policy — telemetry is kept forever. Set <code>TELEMETRY_RETENTION_DAYS</code> to enable
+       automatic pruning of old data.</p>
+  {% endif %}
+  <p class="muted">Oldest stored sample: {{ oldest or "—" }} · newest: {{ newest or "—" }}</p>
+  <p class="muted">For ad-hoc cleanup, use the per-vehicle telemetry browser's date filter + delete,
+     or the bulk range-delete API (<code>DELETE /api/v1/telemetry?vin=&amp;start=&amp;end=&amp;confirm=true</code>).</p>
+</section>
+
+<section class="card">
+  <h2>API access</h2>
+  <p>API key: {% if api_key_configured %}<span class="ok">configured</span>{% else %}<span class="err">missing</span>{% endif %}
+     <span class="muted">(set via <code>API_KEY</code> / <code>API_KEY_FILE</code>; never displayed)</span></p>
+  <p class="muted">The Android app and scripts authenticate with
+     <code>Authorization: Bearer …</code> or <code>X-API-Key</code>.</p>
+</section>
+{% endblock %}
