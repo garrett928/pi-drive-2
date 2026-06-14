@@ -1,21 +1,31 @@
 # Python
 __pycache__/
 *.py[cod]
+*.egg
 *.egg-info/
-.pytest_cache/
-.coverage
-htmlcov/
+dist/
+build/
 .venv/
 venv/
+.python-version
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+.tox/
 
 # Local environment / secrets — never commit
 deploy/.env
 deploy/k8s/secret.yaml
 *.local
 *.dump
-
-# Tooling caches
-.ruff_cache/
 
 # OS
 .DS_Store
