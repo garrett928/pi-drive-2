@@ -169,3 +169,9 @@ The master plans are [`pi-drive-android/implementation/IMPLEMENTATION.md`](pi-dr
 
 - **OBD adapter:** [OBDLink LX](https://www.obdlink.com/products/obdlink-lx/) — Bluetooth Classic, STN1155 chip, ELM327-compatible + ST extended command set. Not a clone. Worth the price.
 - **Vehicle compatibility:** any car with an OBD-II port — US vehicles 1996+, EU petrol 2001+, EU diesel 2004+.
+
+---
+
+## License
+
+[MIT](LICENSE) — © 2026 Garrett Hart

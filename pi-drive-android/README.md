@@ -815,4 +815,4 @@ The [Garage Pi Bridge](https://github.com/devsinsera/garage-pi-bridge) project d
 
 ## License
 
-TBD
+[MIT](../LICENSE) — © 2026 Garrett Hart
