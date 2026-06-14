@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BugReport
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Lan
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Warning
@@ -48,7 +49,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import ghart.space.pi_drive.shared.data.model.DemoScenario
+import ghart.space.pi_drive.shared.diag.FileLogger
 import ghart.space.pi_drive.shared.settings.DevSettingsManager
 import ghart.space.pi_drive.shared.ui.components.PDButtonSecondary
 import ghart.space.pi_drive.shared.ui.components.PDCard
@@ -139,6 +144,8 @@ fun SettingsDevScreen(navController: NavController) {
             )
 
             ActiveModeCard(settings)
+
+            DiagnosticsSection()
 
             PDButtonSecondary(
                 text = "Reset developer settings",
@@ -397,6 +404,87 @@ private fun ActiveModeCard(settings: DevSettingsManager.DevSettings) {
                     text = modeDetail,
                     style = type.bodySmall,
                     color = colors.fgMuted,
+                )
+            }
+        }
+    }
+}
+
+// ── Diagnostics / logs section ──────────────────────────────────────────────────
+
+/**
+ * On-device logging controls. Lets the user capture a logcat session in the car (no laptop),
+ * then share the zipped logs to email/Drive — or clear them — without `adb`.
+ *
+ * Reads/writes [FileLogger] directly because logging is a process-wide concern that starts in
+ * `PiDriveApplication.onCreate()` before any ViewModel exists. A local [refresh] counter forces
+ * the summary line and toggle to re-read [FileLogger] after each action.
+ */
+@Composable
+private fun DiagnosticsSection() {
+    val colors = PiDriveTheme.colors
+    val type = PiDriveTheme.typography
+    val context = LocalContext.current
+
+    var refresh by remember { mutableStateOf(0) }
+    val captureEnabled = remember(refresh) { FileLogger.isCaptureEnabled(context) }
+    val summary = remember(refresh) { FileLogger.summary(context) }
+
+    DevSection(title = "Diagnostics / logs") {
+        PDRow(
+            title = "Save logs to file",
+            subtitle = "Capture app logcat to a file you can share later",
+            leadingIcon = Icons.Rounded.Description,
+            trailing = {
+                PDToggle(
+                    checked = captureEnabled,
+                    onCheckedChange = { enabled ->
+                        FileLogger.setCaptureEnabled(context, enabled)
+                        refresh++
+                    },
+                )
+            },
+        )
+        DevDivider()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = summary,
+                style = type.bodySmall,
+                color = colors.fgMuted,
+            )
+            Text(
+                text = "Drive and reproduce the issue with logging on, then come back here and " +
+                    "tap Share to send the logs to yourself.",
+                style = type.bodySmall,
+                color = colors.fgDim,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PDButtonSecondary(
+                    text = "Share logs",
+                    onClick = {
+                        val intent = FileLogger.createShareIntent(context)
+                        if (intent == null) {
+                            Toast.makeText(context, "No logs captured yet", Toast.LENGTH_SHORT).show()
+                        } else {
+                            context.startActivity(Intent.createChooser(intent, "Share Pi Drive logs"))
+                        }
+                        refresh++
+                    },
+                    modifier = Modifier.weight(1f),
+                )
+                PDButtonSecondary(
+                    text = "Clear logs",
+                    onClick = {
+                        FileLogger.clear(context)
+                        Toast.makeText(context, "Logs cleared", Toast.LENGTH_SHORT).show()
+                        refresh++
+                    },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }

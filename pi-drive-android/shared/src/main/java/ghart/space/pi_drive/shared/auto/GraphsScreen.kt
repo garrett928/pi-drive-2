@@ -57,7 +57,9 @@ class GraphsScreen(carContext: CarContext) : Screen(carContext) {
         Log.d(TAG, "GraphsScreen: created")
     }
 
-    override fun onGetTemplate(): Template {
+    override fun onGetTemplate(): Template = safeAATemplate("GraphsScreen") { buildTemplate() }
+
+    private fun buildTemplate(): Template {
         val slots = latestLayout.graphsSlots
         val snap = latestSnapshot
         val manual = latestManualTrip

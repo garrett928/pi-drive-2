@@ -1,6 +1,6 @@
 # Pi Drive -- Master Implementation Plan
 
-13 phases, 42 steps. Each step is one PR (~1k-5k lines, 30-60 min).
+14 phases, 45 steps. Each step is one PR (~1k-5k lines, 30-60 min).
 See `PROGRESS.md` for current state. Load individual `phase-NN-*.md` for step details.
 
 ## Dependency Graph
@@ -34,6 +34,9 @@ Phase 4: BT    Phase 5: Detection  Phase 6: Trips
           │
           v
      Phase 12: Distribution & Monitoring
+          │
+          v
+     Phase 13: Remote Logging (Grafana Loki)
 ```
 
 ## Phase Overview
@@ -53,13 +56,14 @@ Phase 4: BT    Phase 5: Detection  Phase 6: Trips
 | **10** | `phase-10-polish.md` | 10.1 - 10.4 | TCP transport, E2E integration, CI pipeline |
 | **11** | `phase-11-release-readiness.md` | 11.1 - 11.3 | App icon + splash, permissions onboarding, release build config |
 | **12** | `phase-12-distribution.md` | 12.1 - 12.3 | Play Store listing, Crashlytics, beta testing |
+| **13** | `phase-13-remote-logging.md` | 13.1 - 13.3 | Structured log layer + `pending_logs` buffer, Loki push client + upload worker, instrumentation + Diagnostics settings + Grafana queries |
 
 ## Conventions
 
 - **Package root:** `ghart.space.pi_drive`
 - **Shared module:** `ghart.space.pi_drive.shared` -- OBD logic, Car App Library, data models
 - **Mobile module:** `ghart.space.pi_drive` -- phone UI, settings, MainActivity
-- **Test tags:** `PiDrive`, `OBDTransport`, `VehicleData`, `TripAccumulator`, `AccelDetector`, `GForceDetector`, `TelemetryUploader`
+- **Test tags:** `PiDrive`, `OBDTransport`, `VehicleData`, `TripAccumulator`, `AccelDetector`, `GForceDetector`, `TelemetryUploader`, `RemoteLog`
 - **Verify every step:** Run `/pd-test` then `/pd-verify` (or the subset specified in the step)
 
 ## How to Use This Plan

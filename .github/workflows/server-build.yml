@@ -1,0 +1,98 @@
+# Pi Drive Flask server — build the production image and smoke-test it.
+#
+# On push/PR: build the image and prove it serves and ingests a real payload
+# against a Timescale service. On a version tag: also push to GHCR.
+name: Server Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "pi-drive-server/**"
+      - ".github/workflows/server-build.yml"
+    tags:
+      - "server-v*"
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "pi-drive-server/**"
+      - ".github/workflows/server-build.yml"
+
+jobs:
+  build-and-smoke:
+    name: Build + smoke test
+    runs-on: ubuntu-latest
+    services:
+      timescaledb:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: pidrive
+          POSTGRES_PASSWORD: pidrive
+          POSTGRES_DB: pidrive
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pidrive -d pidrive"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image
+        working-directory: pi-drive-server
+        run: docker build -f deploy/Dockerfile -t pidrive-server:ci .
+
+      - name: Run the image (migrates on boot, serves via gunicorn)
+        run: |
+          docker run -d --name pidrive --network host \
+            -e DATABASE_URL=postgresql+psycopg://pidrive:pidrive@localhost:5432/pidrive \
+            -e API_KEY=ci-test-key \
+            -e SECRET_KEY=ci-secret \
+            -e ENV=prod \
+            pidrive-server:ci
+
+      - name: Wait for readiness
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/readyz; then echo; echo ready; exit 0; fi
+            sleep 2
+          done
+          echo "server did not become ready"; docker logs pidrive; exit 1
+
+      - name: Smoke — ingest the canonical Android payload
+        run: |
+          body="$(curl -fsS -X POST http://localhost:8080/telemetry \
+            -H 'Authorization: Bearer ci-test-key' \
+            -H 'Content-Type: application/json' \
+            --data @pi-drive-server/tests/fixtures/sample_payload.json)"
+          echo "$body"
+          echo "$body" | grep -q '"accepted":1' || { echo "ingest did not confirm accepted=1"; exit 1; }
+
+      - name: Smoke — backup returns a pg_dump archive
+        run: |
+          curl -fsS http://localhost:8080/api/v1/admin/backup -H 'X-API-Key: ci-test-key' -o /tmp/ci.dump
+          head -c 5 /tmp/ci.dump | grep -q PGDMP || { echo "backup not a pg_dump archive"; exit 1; }
+
+      - name: Dump server logs on failure
+        if: failure()
+        run: docker logs pidrive || true
+
+      # ── Publish on a server-v* tag ────────────────────────────────────────────
+      - name: Log in to GHCR
+        if: startsWith(github.ref, 'refs/tags/server-v')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push tagged image
+        if: startsWith(github.ref, 'refs/tags/server-v')
+        run: |
+          TAG="${GITHUB_REF_NAME#server-v}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}/pidrive-server"
+          docker tag pidrive-server:ci "$IMAGE:$TAG"
+          docker tag pidrive-server:ci "$IMAGE:latest"
+          docker push "$IMAGE:$TAG"
+          docker push "$IMAGE:latest"

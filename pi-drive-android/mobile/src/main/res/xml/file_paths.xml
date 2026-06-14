@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Cache directory used by CsvExporter for trip export files -->
+    <!-- Cache directory used by CsvExporter for trip export files, and by FileLogger
+         for the zipped log archive it builds before sharing. -->
     <cache-path name="shared_csv" path="." />
+
+    <!-- External files directory where FileLogger writes rolling session/crash logs.
+         Maps to Android/data/<applicationId>/files/logs/ (visible over USB MTP). -->
+    <external-files-path name="shared_logs" path="logs/" />
 </paths>

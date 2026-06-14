@@ -1,5 +1,6 @@
 package ghart.space.pi_drive.shared.data
 
+import android.util.Log
 import ghart.space.pi_drive.shared.data.model.ConnectionState
 import ghart.space.pi_drive.shared.data.model.VehicleSnapshot
 import ghart.space.pi_drive.shared.obd.OBDCommand
@@ -7,6 +8,7 @@ import ghart.space.pi_drive.shared.obd.OBDResponse
 import ghart.space.pi_drive.shared.obd.OBDTransport
 import ghart.space.pi_drive.shared.obd.PidDecoder
 import ghart.space.pi_drive.shared.obd.ResponseParser
+import ghart.space.pi_drive.shared.obd.toLogString
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -61,6 +63,15 @@ class OBDVehicleDataSource(
 
         /** How often to recalculate and publish the poll rate (ms). */
         const val POLL_RATE_WINDOW_MS = 1_000L
+
+        /** Logcat tag for the OBD data pipeline. Matches [InitializationSequence]. */
+        private const val TAG = "VehicleData"
+
+        /** Number of opening cycles logged in full detail (raw + parsed per PID). */
+        private const val WARMUP_CYCLES = 20
+
+        /** Interval between post-warmup snapshot heartbeat log lines (ms). */
+        private const val HEARTBEAT_MS = 5_000L
     }
 
     private val _snapshot = MutableStateFlow(VehicleSnapshot.EMPTY)
@@ -140,29 +151,50 @@ class OBDVehicleDataSource(
     // ── Polling loop ──────────────────────────────────────────────────────
 
     private suspend fun pollingLoop(transport: OBDTransport) {
-        val scheduler = OBDPollScheduler(_supportedPids.value)
+        val supported = _supportedPids.value
+        val scheduler = OBDPollScheduler(supported)
         var current = VehicleSnapshot.EMPTY
         var cycleNumber = 0
         var lastBatteryMs = 0L
+        var lastHeartbeatMs = 0L
         var windowStartMs = System.currentTimeMillis()
         var cyclesInWindow = 0
         var connectedEmitted = false
 
+        Log.i(TAG, "pollingLoop: started — supportedPids=${supported.size} " +
+            "[${supported.sorted().joinToString { "0x%02X".format(it) }}] " +
+            "activePidsPerRotation=${scheduler.totalActivePids()}")
+        if (scheduler.totalActivePids() == 0) {
+            Log.e(TAG, "pollingLoop: scheduler has 0 active PIDs — nothing will be polled and " +
+                "every dial stays blank. The supported-PID scan during connect returned nothing.")
+        }
+
         while (true) {
             val cycleStartMs = System.currentTimeMillis()
             val commands = scheduler.commandsForCycle(cycleNumber)
+            val detail = cycleNumber < WARMUP_CYCLES
 
             for (command in commands) {
+                val cmdStr = command.toRawString()
                 try {
-                    val raw = transport.send(command.toRawString())
+                    val raw = transport.send(cmdStr)
                     val response = ResponseParser.parse(raw)
                     if (response is OBDResponse.Success) {
                         current = applyPidResponse(current, response)
+                        if (detail) {
+                            Log.d(TAG, "poll[$cycleNumber] $cmdStr → Success pid=0x%02X data=%s raw=%s"
+                                .format(response.pid, response.dataBytes.toHex(), raw.toLogString()))
+                        }
+                    } else if (detail) {
+                        // NoData / Error / unexpected AT reply for a PID request — surfaces
+                        // adapters that "connect" but return no usable data for the gauges.
+                        Log.w(TAG, "poll[$cycleNumber] $cmdStr → $response raw=${raw.toLogString()}")
                     }
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                     // Skip this PID; IO errors on individual PIDs do not abort the cycle.
+                    if (detail) Log.w(TAG, "poll[$cycleNumber] $cmdStr → exception: ${e.message}")
                 }
             }
 
@@ -179,6 +211,14 @@ class OBDVehicleDataSource(
             if (!connectedEmitted) {
                 _connectionState.value = ConnectionState.Connected(activeAdapterName, activeProtocol, 0f)
                 connectedEmitted = true
+            }
+
+            // Heartbeat: a periodic, low-volume summary of which snapshot fields are populated.
+            // If everything reads "null" here while the connection shows "live", the gauges are
+            // blank because no PID is decoding — not because the UI is broken.
+            if (cycleStartMs - lastHeartbeatMs >= HEARTBEAT_MS) {
+                Log.i(TAG, "snapshot[$cycleNumber]: ${current.logSummary()}")
+                lastHeartbeatMs = cycleStartMs
             }
 
             // Update poll rate every second
@@ -228,3 +268,12 @@ class OBDVehicleDataSource(
         else -> current
     }
 }
+
+/** Hex dump of OBD data bytes for log lines, e.g. `[50]` or `[1A F8]`. */
+private fun ByteArray.toHex(): String =
+    "[" + joinToString(" ") { "%02X".format(it.toInt() and 0xFF) } + "]"
+
+/** One-line summary of the populated fields in a snapshot, for the polling heartbeat. */
+private fun VehicleSnapshot.logSummary(): String =
+    "speed=$speedKmh rpm=$rpm coolantC=$coolantTempC throttle=$throttlePct " +
+        "maf=$mafGps fuelPct=$fuelLevelPct oilC=$oilTempC fuelRate=$fuelRateLph battery=$batteryVoltage"

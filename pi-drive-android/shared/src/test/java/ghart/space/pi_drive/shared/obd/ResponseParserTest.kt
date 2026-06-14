@@ -114,6 +114,65 @@ class ResponseParserTest {
         assertEquals("14.2V", (result as OBDResponse.ATResponse).text)
     }
 
+    // ── Headers-on (ATH0 failed) ──────────────────────────────────────────
+    //
+    // When ATH0 does not take effect the adapter returns CAN/ISO headers prepended
+    // to every response. The parser must still extract the OBD payload.
+
+    @Test
+    fun `CAN 11-bit header prefix is stripped and valid response returned`() {
+        // "7E8" = 3-nibble CAN-11 address; total nibbles = 17 (odd). This was the
+        // bug: the old even-length guard rejected it and returned ATResponse.
+        val raw = "7E8 06 41 0D 50"    // speed = 80 km/h
+        val result = ResponseParser.parse(raw)
+        assertTrue("Should parse Success despite 3-nibble CAN header", result is OBDResponse.Success)
+        val s = result as OBDResponse.Success
+        assertEquals(0x41, s.serviceResponse)
+        assertEquals(0x0D, s.pid)
+        assertEquals(1, s.dataBytes.size)
+        assertEquals(0x50.toByte(), s.dataBytes[0])
+    }
+
+    @Test
+    fun `CAN 11-bit header on PID-00 support scan parses correctly`() {
+        // This is the exact failure mode for empty dials: the 0100 PID-support scan
+        // returns a CAN-11 framed response which was previously mis-parsed as ATResponse.
+        val raw = "7E8 06 41 00 BE 3F B8 13"
+        val result = ResponseParser.parse(raw)
+        assertTrue(result is OBDResponse.Success)
+        val s = result as OBDResponse.Success
+        assertEquals(0x41, s.serviceResponse)
+        assertEquals(0x00, s.pid)
+        assertEquals(4, s.dataBytes.size)
+        assertEquals(0xBE.toByte(), s.dataBytes[0])
+        assertEquals(0x3F.toByte(), s.dataBytes[1])
+    }
+
+    @Test
+    fun `CAN 29-bit header prefix is stripped and valid response returned`() {
+        // 29-bit CAN IDs show as 8 nibbles (4 bytes) — even total, so the old code
+        // could enter the hex block, but bytes[0]=0x18 is not in 0x40–0x49. The new
+        // byte-scan finds 0x41 at the correct position.
+        val raw = "18DAF110 06 41 0C 1A F8"   // RPM
+        val result = ResponseParser.parse(raw)
+        assertTrue("Should parse Success despite 8-nibble CAN-29 header", result is OBDResponse.Success)
+        val s = result as OBDResponse.Success
+        assertEquals(0x41, s.serviceResponse)
+        assertEquals(0x0C, s.pid)
+        assertEquals(2, s.dataBytes.size)
+    }
+
+    @Test
+    fun `SEARCHING prefix followed by CAN header still parses correctly`() {
+        // SEARCHING... (skipped) then CAN-11 framed response — both problems at once.
+        val raw = "SEARCHING...\r7E8 06 41 0D 64"   // speed = 100 km/h
+        val result = ResponseParser.parse(raw)
+        assertTrue(result is OBDResponse.Success)
+        val s = result as OBDResponse.Success
+        assertEquals(0x0D, s.pid)
+        assertEquals(0x64.toByte(), s.dataBytes[0])
+    }
+
     // ── Prompt stripping ──────────────────────────────────────────────────
 
     @Test

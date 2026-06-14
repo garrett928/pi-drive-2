@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.work.Configuration
 import androidx.work.DelegatingWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
+import ghart.space.pi_drive.shared.diag.FileLogger
 import ghart.space.pi_drive.shared.telemetry.UploadWorker
 import javax.inject.Inject
 
@@ -36,6 +37,10 @@ class PiDriveApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // Start on-device diagnostics FIRST so the logcat pump and crash handler are live
+        // for the rest of startup — including the Android Auto CarAppService, which the host
+        // can bind in this same process before any Activity is created.
+        FileLogger.init(this)
         Log.d("PiDrive", "PiDriveApplication.onCreate")
     }
 }

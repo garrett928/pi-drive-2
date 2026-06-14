@@ -100,9 +100,17 @@ class OBDPollSchedulerTest {
     }
 
     @Test
-    fun `empty supported pids returns empty list`() {
+    fun `empty supported pids falls back to all configured pids`() {
+        // When the PID-support scan fails (e.g. ATH0 left headers on), supportedPids is empty.
+        // The scheduler must fall back to attempting every configured PID rather than polling
+        // nothing and leaving all dials blank.
         val scheduler = OBDPollScheduler(emptySet())
-        assertTrue(scheduler.commandsForCycle(0).isEmpty())
+        // Fallback: all HIGH_PRIORITY + ROUND_ROBIN pids
+        val cycle0 = scheduler.commandsForCycle(0).map { pidOf(it) }
+        assertTrue("Speed (0x0D) should be in fallback", 0x0D in cycle0)
+        assertTrue("RPM (0x0C) should be in fallback", 0x0C in cycle0)
+        assertTrue("Scheduler should not be empty when supportedPids is empty",
+            scheduler.totalActivePids() > 0)
     }
 
     // ── Command format ────────────────────────────────────────────────────

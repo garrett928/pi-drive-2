@@ -111,8 +111,17 @@ Last updated: 2026-05-31
 | 12.1 | Play Store listing preparation | NOT STARTED | |
 | 12.2 | Firebase Crashlytics integration | NOT STARTED | |
 | 12.3 | Beta testing setup | NOT STARTED | |
+| **Phase 13: Remote Logging (Grafana Loki)** |
+| 13.1 | Structured log layer + `pending_logs` Room buffer | NOT STARTED | |
+| 13.2 | Loki push client + LogUploadWorker + settings config | NOT STARTED | |
+| 13.3 | Instrumentation + Diagnostics settings screen + Grafana queries | NOT STARTED | |
 
 ## Notes
+
+### Phase 13 — Remote logging (Grafana Loki)
+- New trailing phase; independent of Phase 12, depends on Phase 1 (Room) + Phase 7 (offline-buffer/WorkManager pattern, which it mirrors for `pending_logs`).
+- App pushes Loki-format batches to a Grafana **Alloy** gateway (or Loki directly) — see `phase-13-remote-logging.md`. Label/structured-metadata schema is **shared with the server** (`pi-drive-server` Phase 8); keep them in sync so Grafana queries work across both.
+- Complements the existing on-device `FileLogger` (see `DEBUGGING.md`); does not replace it.
 
 ### AGP 9.0+ / Kotlin 2.2.x build system
 - Do NOT apply `org.jetbrains.kotlin.android` plugin to `:mobile` or `:automotive`; AGP 9.0+ handles Kotlin via `builtInKotlin=true` by default

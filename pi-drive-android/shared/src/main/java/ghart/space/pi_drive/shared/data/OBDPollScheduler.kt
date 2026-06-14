@@ -1,5 +1,6 @@
 package ghart.space.pi_drive.shared.data
 
+import android.util.Log
 import ghart.space.pi_drive.shared.obd.OBDCommand
 
 /**
@@ -25,6 +26,9 @@ import ghart.space.pi_drive.shared.obd.OBDCommand
 class OBDPollScheduler(private val supportedPids: Set<Int>) {
 
     companion object {
+        /** Logcat tag — same as [OBDVehicleDataSource] so filtering works. */
+        private const val TAG = "VehicleData"
+
         /** Always-polled PIDs — speed and RPM drive immediate UI + detector updates. */
         val HIGH_PRIORITY_PIDS = listOf(0x0D, 0x0C)
 
@@ -38,8 +42,27 @@ class OBDPollScheduler(private val supportedPids: Set<Int>) {
         val ROUND_ROBIN_PIDS = MEDIUM_PRIORITY_PIDS + LOW_PRIORITY_PIDS
     }
 
-    private val activeHighPids = HIGH_PRIORITY_PIDS.filter { it in supportedPids }
-    private val activeRoundRobinPids = ROUND_ROBIN_PIDS.filter { it in supportedPids }
+    /**
+     * Effective PID set used for filtering.
+     *
+     * Equals [supportedPids] when the ECU's PID-support scan succeeded. Falls back to
+     * attempting every configured PID when [supportedPids] is empty — which happens when
+     * [InitializationSequence]'s PID range scan could not parse the adapter response (e.g.
+     * because ATH0 did not suppress headers, or the adapter returned a format the parser did
+     * not recognise). Querying unsupported PIDs returns NO DATA, which the polling loop
+     * handles gracefully, so the fallback is safe. This ensures gauges populate even when
+     * the PID scan fails rather than staying forever blank.
+     */
+    private val effectivePids: Set<Int> = supportedPids.ifEmpty {
+        val fallback = (HIGH_PRIORITY_PIDS + ROUND_ROBIN_PIDS).toSet()
+        Log.w(TAG, "OBDPollScheduler: supportedPids is empty — using fallback set of " +
+            "${fallback.size} PIDs (${fallback.sorted().joinToString { "0x%02X".format(it) }}). " +
+            "Dials will attempt all configured PIDs; check InitSequence logs for the scan failure.")
+        fallback
+    }
+
+    private val activeHighPids = HIGH_PRIORITY_PIDS.filter { it in effectivePids }
+    private val activeRoundRobinPids = ROUND_ROBIN_PIDS.filter { it in effectivePids }
 
     /**
      * Returns the list of OBD commands to send on cycle [cycleNumber].

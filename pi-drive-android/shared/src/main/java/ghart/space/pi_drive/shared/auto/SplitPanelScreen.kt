@@ -62,7 +62,9 @@ class SplitPanelScreen(carContext: CarContext) : Screen(carContext) {
         Log.d(TAG, "SplitPanelScreen: created")
     }
 
-    override fun onGetTemplate(): Template {
+    override fun onGetTemplate(): Template = safeAATemplate("SplitPanelScreen") { buildTemplate() }
+
+    private fun buildTemplate(): Template {
         val snap = latestSnapshot
         val manual = latestManualTrip
         val auto = latestAutoTrip

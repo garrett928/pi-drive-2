@@ -769,6 +769,47 @@ See section 5.7 for full specification of acceleration, g-force, speed/RPM alert
 
 ---
 
+### 5.12 Remote Logging & Diagnostics (F12)
+
+The app ships its operational logs to a Grafana **Loki** instance so issues can be searched and diagnosed remotely — especially failures that happen in the car with no laptop attached. This complements (does not replace) the on-device `FileLogger` (logcat-to-file capture + crash handler; see `DEBUGGING.md`).
+
+**Goal:** know the app is working — and especially when it is *not* — by searching logs in Grafana for errors, connection failures, and key lifecycle events, filterable by device and vehicle. Log generously; the bias is toward too much rather than too little. **Do not** ship a log line per telemetry record uploaded — log upload activity in aggregate (batch summaries) only.
+
+#### 5.12.1 Transport
+
+- The app pushes batched log entries in **Loki push API format** (`POST /loki/api/v1/push`, JSON, optional gzip) to a configurable endpoint. The endpoint is a Grafana **Alloy** `loki.source.api` gateway (recommended) or Loki directly — the wire format is identical, so it is a configuration choice.
+- Android cannot run the Alloy agent itself, so the app is its own log shipper.
+- Auth: optional bearer token header; optional `X-Scope-OrgID` tenant header. Stored alongside the endpoint in encrypted settings.
+
+#### 5.12.2 Offline buffering
+
+- Log entries are written to a Room `pending_logs` table (mirrors `pending_uploads`, see 6.x).
+- A `WorkManager` worker ships batches with exponential backoff and reuploads when connectivity returns — identical strategy to telemetry offline upload (5.4.4). If Loki is unreachable, logs are retained (subject to the retention cap) and re-sent later.
+- Respects the user's data-retention and Wi-Fi-only preferences.
+
+#### 5.12.3 Label & metadata schema (shared with the server)
+
+Per Loki best practices, **labels are static and low-cardinality**; identifiers go in **structured metadata** (queryable, no stream explosion).
+
+- **Labels:** `app="pi-drive"`, `component` (`mobile` | `automotive`), `level` (`debug|info|warn|error`), `env` (`dev|prod`).
+- **Structured metadata:** `tag` (log tag, e.g. `VehicleData`), `device_id`, `vin`, `session_id` (per app-run id), `event` (short key, e.g. `obd_init_complete`, `bt_connect`, `upload_batch`), `thread`.
+
+#### 5.12.4 What to log
+
+Generous on lifecycle and errors; sparse on high-frequency data:
+
+- **Always:** app start/stop, config changes, uncaught exceptions/crashes (reuse the existing crash handler), all `WARN`/`ERROR`.
+- **Connection:** BT scan/pair/connect/disconnect, adapter found/lost, every auto-reconnect attempt + outcome.
+- **OBD init:** each init-sequence step, the **`supportedPids` count** (the empty-dials smoking gun), VIN read result.
+- **Detection/trips/alerts:** hard accel/brake events, trip start/end, health alerts (all sparse — fine to log each).
+- **Telemetry uploader:** batch summaries only (`uploaded batch=50, queue=0, latency=120ms`) — **never per record**.
+
+#### 5.12.5 Settings
+
+A "Diagnostics & Logging" section (under Developer/Cloud settings) exposes: remote-logging on/off, Loki endpoint URL, auth token (masked), minimum remote log level, a "Send test log" button (verifies connectivity, like the telemetry Test button), and current `pending_logs` queue depth.
+
+---
+
 ## 6. Data Architecture
 
 ### 6.1 OBD Polling
@@ -816,6 +857,7 @@ data class VehicleSnapshot(
 | `auto_trips` | Auto-detected trip summaries |
 | `manual_trips` | Manual trip state and archived trip summaries |
 | `pending_uploads` | Offline telemetry queued for server upload |
+| `pending_logs` | Offline log entries queued for Loki push (see 5.12) |
 
 ### 6.4 Reactive Data Flow
 

@@ -1,5 +1,6 @@
 package ghart.space.pi_drive.shared.obd
 
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withTimeoutOrNull
@@ -33,6 +34,9 @@ class InitializationSequence(
 
     companion object {
         const val DEFAULT_STEP_TIMEOUT_MS = 5_000L
+
+        /** Logcat tag for the OBD data pipeline (init → poll → parse → decode → snapshot). */
+        private const val TAG = "VehicleData"
     }
 
     /**
@@ -57,11 +61,14 @@ class InitializationSequence(
         var vehicleInfo: VehicleInfo? = null
         var protocol: String? = null
 
+        Log.i(TAG, "InitSequence: starting (stepTimeout=${stepTimeout}ms)")
+
         // Step 1: ATZ — adapter reset
         val atzResponse = sendWithTimeout(OBDCommand.ATZ)
         val adapterReady = atzResponse != null && "ELM327" in atzResponse.uppercase()
         if (!adapterReady) errors["ATZ"] = atzResponse ?: "timeout"
         val adapterVersion = atzResponse?.lines()?.lastOrNull { "ELM327" in it.uppercase() }
+        Log.i(TAG, "InitSequence: ATZ ready=$adapterReady version=$adapterVersion raw=${atzResponse?.toLogString()}")
         emit(InitStep.AdapterReset(success = adapterReady, adapterVersion = adapterVersion))
 
         // Steps 2–5: configuration AT commands
@@ -70,6 +77,7 @@ class InitializationSequence(
             val resp = sendWithTimeout(cmd)
             val ok = resp?.trim()?.uppercase()?.let { "OK" in it || "ELM327" in it } ?: false
             if (!ok) errors[cmd.toRawString()] = resp ?: "timeout"
+            Log.i(TAG, "InitSequence: ${cmd.toRawString()} ok=$ok raw=${resp?.toLogString()}")
             ok
         }
         emit(InitStep.ConfigApplied(success = configOk))
@@ -78,27 +86,41 @@ class InitializationSequence(
         val atspResponse = sendWithTimeout(OBDCommand.ATSP(0))
         val protocolSelected = atspResponse?.trim()?.uppercase()?.let { "OK" in it } ?: false
         if (!protocolSelected) errors["ATSP0"] = atspResponse ?: "timeout"
+        Log.i(TAG, "InitSequence: ATSP0 ok=$protocolSelected raw=${atspResponse?.toLogString()}")
         emit(InitStep.ProtocolSelected(success = protocolSelected))
 
         // Step 7: ATDP — query detected protocol
         val atdpResponse = sendWithTimeout(AtDP)
         protocol = atdpResponse?.trim()?.takeIf { it.isNotBlank() && it.uppercase() != "?" }
+        Log.i(TAG, "InitSequence: ATDP protocol=$protocol raw=${atdpResponse?.toLogString()}")
 
         // Step 8: PID range scan
         val allPids = mutableSetOf<Int>()
         val rangesToQuery = listOf(0x00, 0x20, 0x40, 0x60)
         for (rangeBase in rangesToQuery) {
+            val rangeHex = "0x%02X".format(rangeBase)
             val cmd = OBDCommand.PidRequest(service = 1, pid = rangeBase)
-            val raw = sendWithTimeout(cmd) ?: break
+            val raw = sendWithTimeout(cmd)
+            if (raw == null) {
+                Log.w(TAG, "InitSequence: PID range $rangeHex query timed out — stopping scan")
+                errors["PID_RANGE_$rangeHex"] = "timeout"
+                break
+            }
             val parsed = ResponseParser.parse(raw)
             if (parsed is OBDResponse.Success) {
                 val rangeResult = PidSupport.decode(parsed)
                 allPids.addAll(rangeResult)
+                Log.i(TAG, "InitSequence: PID range $rangeHex found ${rangeResult.size} " +
+                    "(${rangeResult.sorted().joinToString { "0x%02X".format(it) }}) raw=${raw.toLogString()}")
                 emit(InitStep.PidRangeScan(rangeBase = rangeBase, foundCount = rangeResult.size))
                 // Stop scanning if the next boundary PID is not present
                 if (!PidSupport.shouldQueryNextRange(rangeBase, rangeResult)) break
             } else {
-                errors["PID_RANGE_0x${rangeBase.toString(16).uppercase()}"] = parsed.toString()
+                // This is the most common reason live dials stay blank: the support scan
+                // produced no Success frame, so the poll scheduler has no PIDs to request.
+                Log.w(TAG, "InitSequence: PID range $rangeHex did NOT parse as a Success frame " +
+                    "→ parsed=$parsed raw=${raw.toLogString()} (no PIDs added — dials will be blank)")
+                errors["PID_RANGE_$rangeHex"] = parsed.toString()
                 break
             }
         }
@@ -112,7 +134,17 @@ class InitializationSequence(
         } else {
             errors["VIN"] = "timeout"
         }
+        Log.i(TAG, "InitSequence: VIN=${vin ?: "(none)"} info=${vehicleInfo}")
         emit(InitStep.VinRead(vin = vin, vehicleInfo = vehicleInfo))
+
+        // Final summary — the single most useful line for the empty-dials investigation.
+        Log.i(TAG, "InitSequence: COMPLETE — supportedPids=${supportedPids.size} " +
+            "[${supportedPids.sorted().joinToString { "0x%02X".format(it) }}] " +
+            "protocol=$protocol errors=$errors")
+        if (supportedPids.isEmpty()) {
+            Log.e(TAG, "InitSequence: supportedPids is EMPTY — OBDPollScheduler will request " +
+                "no PIDs and every live dial will be blank. Check the PID-range raw responses above.")
+        }
 
         // Final result
         emit(
@@ -139,6 +171,16 @@ class InitializationSequence(
             }
         }
 }
+
+/**
+ * Renders a raw adapter response for a single log line: control characters are made visible
+ * (`\r`, `\n`, `>` prompt) so framing problems are obvious, and the whole thing is quoted.
+ */
+internal fun String.toLogString(): String =
+    "\"" + this
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .take(200) + "\""
 
 /** Pseudo-command for ATDP (Describe Protocol). Not in the main OBDCommand sealed class since it is init-only. */
 private object AtDP : OBDCommand() {

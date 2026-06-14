@@ -92,12 +92,19 @@ class DialsScreen(carContext: CarContext) : Screen(carContext) {
         Log.d(TAG, "DialsScreen: created")
     }
 
-    override fun onGetTemplate(): Template {
+    override fun onGetTemplate(): Template = safeAATemplate("DialsScreen") { buildTemplate() }
+
+    private fun buildTemplate(): Template {
         val slots = latestLayout.dialsSlots
         val snap = latestSnapshot
         val manual = latestManualTrip
         val auto = latestAutoTrip
         val isStreaming = latestConnectionState is ConnectionState.Connected
+
+        // Logged every render so the captured log shows the exact inputs that produced a crash:
+        // an empty slot list, a blank value string, etc. all violate GridTemplate constraints.
+        Log.d(TAG, "DialsScreen.onGetTemplate: slots=${slots.size} streaming=$isStreaming " +
+            "snapshot=[speed=${snap.speedKmh} rpm=${snap.rpm} battery=${snap.batteryVoltage}]")
 
         val itemListBuilder = ItemList.Builder()
         slots.take(6).forEach { slot ->
