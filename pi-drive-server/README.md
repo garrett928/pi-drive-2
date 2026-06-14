@@ -1,9 +1,7 @@
 # Pi Drive Server
 
-[![Server Tests](https://github.com/OWNER/REPO/actions/workflows/server-test.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/server-test.yml)
-[![Server Image](https://github.com/OWNER/REPO/actions/workflows/server-build.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/server-build.yml)
-
-> Replace `OWNER/REPO` in the badge URLs with your GitHub path.
+[![Server Tests](https://github.com/garrett928/pi-drive-2/actions/workflows/server-test.yml/badge.svg)](https://github.com/garrett928/pi-drive-2/actions/workflows/server-test.yml)
+[![Server Image](https://github.com/garrett928/pi-drive-2/actions/workflows/server-build.yml/badge.svg)](https://github.com/garrett928/pi-drive-2/actions/workflows/server-build.yml)
 
 Flask + TimescaleDB telemetry server for the [Pi Drive](../CLAUDE.md) Android
 app: ingests live OBD-II telemetry, stores it in a TimescaleDB hypertable,
@@ -12,7 +10,7 @@ full-database backup/restore.
 
 ## Run locally (the fast way)
 
-Prod-like, one command — builds the image, starts TimescaleDB, migrates on boot,
+One command — builds the image, starts TimescaleDB, migrates on boot,
 serves via gunicorn:
 
 ```bash
