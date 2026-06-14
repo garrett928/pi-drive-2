@@ -24,6 +24,38 @@ The app batches telemetry snapshots and POSTs them to a self-hosted Flask server
 
 ---
 
+## Screenshots
+
+### Android app
+
+<table>
+  <tr>
+    <td align="center"><b>Live dashboard</b></td>
+    <td align="center"><b>Trip history</b></td>
+    <td align="center"><b>Android Auto layout</b></td>
+  </tr>
+  <tr>
+    <td><img src="pi-drive-android/screenshots/pidrive-7.1-dashboard.png" width="220" alt="Live dashboard showing 62 mph, RPM dial, throttle, coolant temp, and battery voltage"></td>
+    <td><img src="pi-drive-android/screenshots/pidrive-trip-history.png" width="220" alt="Trip history list with weekly summary"></td>
+    <td><img src="pi-drive-android/screenshots/pidrive-aa-layout-editor.png" width="220" alt="Android Auto 6-slot grid layout editor"></td>
+  </tr>
+</table>
+
+### Telemetry server
+
+<table>
+  <tr>
+    <td align="center"><b>Fleet dashboard</b></td>
+    <td align="center"><b>Vehicle detail</b></td>
+  </tr>
+  <tr>
+    <td><img src="pi-drive-server/screenshots/ui-dashboard.png" width="480" alt="Fleet dashboard showing vehicle cards with sparklines"></td>
+    <td><img src="pi-drive-server/screenshots/ui-vehicle-detail.png" width="480" alt="Vehicle detail page with telemetry table and event log"></td>
+  </tr>
+</table>
+
+---
+
 ## Repository layout
 
 ```
