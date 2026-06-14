@@ -74,7 +74,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install ELM327 emulator
-        run: pip install ELM327-emulator
+        run: |
+          pip install --upgrade pip setuptools
+          pip install ELM327-emulator
 
       - name: Start ELM327 emulator in background
         run: |
